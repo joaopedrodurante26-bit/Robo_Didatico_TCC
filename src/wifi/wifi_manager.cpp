@@ -22,27 +22,15 @@ WebServer server(80);
 void configurarRotas() {
 
     server.on("/", []() {
+        Serial.println("[HTTP] Cliente acessou /");
+
         File file = LittleFS.open("/index.html", "r");
 
         if (!file) {
+            Serial.println("[ERRO] index.html não encontrado!");
             server.send(500, "text/plain", "Erro ao abrir HTML");
             return;
         }
-
-        server.on("/", []() {
-            Serial.println("[HTTP] Cliente acessou /");
-
-            File file = LittleFS.open("/index.html", "r");
-
-            if (!file) {
-                Serial.println("[ERRO] Arquivo não encontrado!");
-                server.send(500, "text/plain", "Erro ao abrir HTML");
-                return;
-            }
-
-            server.streamFile(file, "text/html");
-            file.close();
-        });
 
         server.streamFile(file, "text/html");
         file.close();
