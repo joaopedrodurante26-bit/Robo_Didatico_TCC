@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Robô Vespa</title>
+    <style>
+        body { font-family: Arial; text-align: center; }
+        button {
+            padding: 20px;
+            font-size: 20px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Controle do Robô</h1>
+
+    <button onclick="fetch('/frente')">Frente</button><br>
+
+    <button onclick="fetch('/esquerda')">Esquerda</button>
+    <button onclick="fetch('/direita')">Direita</button><br>
+
+    <button onclick="fetch('/tras')">Trás</button><br>
+
+    <button onclick="fetch('/parar')">Parar</button>
+</body>
+</html>
