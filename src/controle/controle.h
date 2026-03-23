@@ -16,6 +16,8 @@ enum EstadoSistema {
     AUTOMATICO
 };
 
+Comando getComando();
+
 void initControle();
 void setComando(Comando cmd);
 void atualizarControle();

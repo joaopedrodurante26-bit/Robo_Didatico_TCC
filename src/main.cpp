@@ -1,6 +1,4 @@
 #include <Arduino.h>
-
-// Futuras inclusões (você vai criar esses arquivos depois)
 #include "wifi/wifi_manager.h"
 #include "motores/motores.h"
 #include "sensores/sensores.h"
