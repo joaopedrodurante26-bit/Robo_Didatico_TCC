@@ -1,5 +1,5 @@
 #include "wifi_manager.h"
-
+#include "controle/controle.h"
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -50,26 +50,31 @@ void configurarRotas() {
 
     server.on("/frente", []() {
         Serial.println("[CMD] Frente");
+        setComando(FRENTE);
         server.send(200, "text/plain", "OK");
     });
 
     server.on("/parar", []() {
         Serial.println("[CMD] Parar");
+        setComando(PARAR);
         server.send(200, "text/plain", "OK");
     });
 
     server.on("/direita", []() {
         Serial.println("[CMD] Direita");
+        setComando(DIREITA);
         server.send(200, "text/plain", "OK");
     });
 
     server.on("/esquerda", []() {
         Serial.println("[CMD] Esquerda");
+        setComando(ESQUERDA);
         server.send(200, "text/plain", "OK");
     });
 
     server.on("/tras", []() {
         Serial.println("[CMD] Trás");
+        setComando(TRAS);
         server.send(200, "text/plain", "OK");
     });
 

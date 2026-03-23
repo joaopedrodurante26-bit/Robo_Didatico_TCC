@@ -1,24 +1,30 @@
 #include "controle.h"
 
-String comandoAtual = "parar";
+Comando comandoAtual = PARAR;
 
 void initControle() {
-    comandoAtual = "parar";
+    bool sistemaAtivo = true;
+    comandoAtual = PARAR;
 }
 
-void setComando(const String& cmd) {
+void setComando(Comando cmd) {
     comandoAtual = cmd;
 }
 
+Comando getComando() {
+    return comandoAtual;
+}
+
 void atualizarControle() {
-    if (comandoAtual == "frente") {
+    if (comandoAtual == FRENTE) {
     // mover frente
-    } else if (comandoAtual == "tras") {
+    } else if (comandoAtual == TRAS) {
         // mover tras
-    } else if (comandoAtual == "esquerda") {
+    } else if (comandoAtual == ESQUERDA) {
         // mover esquerda
-    } else if (comandoAtual == "direita") {
+    } else if (comandoAtual == DIREITA) {
         // mover direita
-    } else if (comandoAtual == "parar") {
+    } else if (comandoAtual == PARAR) {
         // parar movimento
     }
+}
