@@ -48,33 +48,24 @@ void configurarRotas() {
         file.close();
     });
 
-    server.on("/frente", []() {
-        Serial.println("[CMD] Frente");
-        setComando(FRENTE);
-        server.send(200, "text/plain", "OK");
-    });
+    server.on("/controle", []() {
+        if (server.hasArg("x") && server.hasArg("y")) {
 
-    server.on("/parar", []() {
-        Serial.println("[CMD] Parar");
-        setComando(PARAR);
-        server.send(200, "text/plain", "OK");
-    });
+            float x = server.arg("x").toFloat();
+            float y = server.arg("y").toFloat();
 
-    server.on("/direita", []() {
-        Serial.println("[CMD] Direita");
-        setComando(DIREITA);
-        server.send(200, "text/plain", "OK");
-    });
+            Serial.print("[JOY] X: ");
+            Serial.print(x);
+            Serial.print(" Y: ");
+            Serial.println(y);
 
-    server.on("/esquerda", []() {
-        Serial.println("[CMD] Esquerda");
-        setComando(ESQUERDA);
-        server.send(200, "text/plain", "OK");
-    });
+            // Converte para velocidade (-255 a 255)
+            int velEsq = (y + x) * 255;
+            int velDir = (y - x) * 255;
 
-    server.on("/tras", []() {
-        Serial.println("[CMD] Trás");
-        setComando(TRAS);
+            setVelocidade(velEsq, velDir);
+        }
+
         server.send(200, "text/plain", "OK");
     });
 
