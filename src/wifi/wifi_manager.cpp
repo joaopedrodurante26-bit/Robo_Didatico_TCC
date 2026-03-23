@@ -1,5 +1,6 @@
 #include "wifi_manager.h"
 #include "controle/controle.h"
+#include "motores/motores.h"
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
