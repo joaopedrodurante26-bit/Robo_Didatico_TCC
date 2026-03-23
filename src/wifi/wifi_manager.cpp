@@ -53,6 +53,9 @@ void configurarRotas() {
 void initWiFi() {
     Serial.println("[WIFI] Iniciando modo Access Point...");
 
+    // Define o modo WiFi para Access Point
+    WiFi.mode(WIFI_AP);
+
     // Inicia como ponto de acesso
     WiFi.softAP(ssid, password);
 
@@ -73,6 +76,11 @@ void initWiFi() {
     Serial.println("[FS] Sistema de arquivos montado");
 
     configurarRotas();
+
+    delay(100); // Pequeno delay para garantir que tudo esteja pronto
+
+    Serial.println(WiFi.softAPIP());
+    
     server.begin();
 
     Serial.println("[SERVER] Servidor iniciado");

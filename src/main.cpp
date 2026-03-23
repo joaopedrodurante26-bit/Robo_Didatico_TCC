@@ -27,12 +27,10 @@ void setup() {
 // =========================
 void loop() {
     // Atualização contínua dos módulos
-
     atualizarSensores();
     atualizarControle();
     atualizarMotores();
     atualizarWiFi();
-
     // Pequeno delay para estabilidade (evitar loop agressivo)
     delay(10);
 }
