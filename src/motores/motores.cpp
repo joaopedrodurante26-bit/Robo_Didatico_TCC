@@ -3,10 +3,10 @@
 #include "../controle/controle.h"
 
 // 🔧 DEFINA SEUS PINOS AQUI (exemplo)
-#define PWM_ESQ  5
-#define DIR_ESQ  18
-#define PWM_DIR  19
-#define DIR_DIR  21
+#define PWM_ESQ  13
+#define DIR_ESQ  14
+#define PWM_DIR  27
+#define DIR_DIR  4
 
 // configurações de pinos para controle de direção
 #define CANAL_ESQ 0
