@@ -26,6 +26,7 @@
 #include "motores/motores.h"
 #include "sensores/sensores.h"
 #include "controle/controle.h"
+#include "diagnostico/diagnostico.h"
 
 // =====================================================
 // SETUP
@@ -51,6 +52,10 @@ void setup() {
     initMotores();
     initSensores();
     initWiFi();
+
+    atualizarSensores(); // Leitura inicial para diagnóstico
+    delay(100); // Pequeno delay para estabilizar sensores
+    executarDiagnostico();
 
     Serial.println("[BOOT] Sistema inicializado com sucesso!");
 }
