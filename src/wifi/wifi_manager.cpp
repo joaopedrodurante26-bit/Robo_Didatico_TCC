@@ -1,27 +1,46 @@
+// =====================================================
+// MÓDULO WIFI MANAGER - IMPLEMENTAÇÃO
+// =====================================================
+// Responsável por:
+// - Criar rede Wi-Fi (Access Point)
+// - Servir interface web (HTML + JS)
+// - Receber comandos do usuário (joystick)
+// - Disponibilizar dados do robô via API (/status)
+//
+// Atua como ponte entre:
+// Interface Web ↔ Controle ↔ Motores/Sensores
+// =====================================================
+
 #include "wifi_manager.h"
 #include "controle/controle.h"
 #include "motores/motores.h"
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <LittleFS.h>
 
-// =========================
+// =====================================================
 // CONFIGURAÇÕES DA REDE
-// =========================
+// =====================================================
+
 const char* ssid = "ROBO_VESPA";
 const char* password = "12345678"; // mínimo 8 caracteres
 
-// =========================
+// =====================================================
 // SERVIDOR WEB
-// =========================
-WebServer server(80);
+// =====================================================
 
-// =========================
-// CONFIGURA ROTAS
-// =========================
-void configurarRotas() {
+static WebServer server(80);
 
+// =====================================================
+// ROTAS HTTP
+// =====================================================
+
+static void configurarRotas() {
+    // -------------------------------------------------
+    // ROTA: Página principal
+    // -------------------------------------------------
     server.on("/", []() {
         Serial.println("[HTTP] Cliente acessou /");
 
@@ -37,10 +56,15 @@ void configurarRotas() {
         file.close();
     });
 
+
+    // -------------------------------------------------
+    // ROTA: Script JS
+    // -------------------------------------------------
     server.on("/script.js", []() {
         File file = LittleFS.open("/script.js", "r");
 
         if (!file) {
+            Serial.println("[ERRO] script.js não encontrado!");
             server.send(500, "text/plain", "Erro ao abrir JS");
             return;
         }
@@ -49,7 +73,12 @@ void configurarRotas() {
         file.close();
     });
 
+
+    // -------------------------------------------------
+    // ROTA: CONTROLE (Joystick)
+    // -------------------------------------------------
     server.on("/controle", []() {
+
         if (server.hasArg("x") && server.hasArg("y")) {
 
             float x = server.arg("x").toFloat();
@@ -57,20 +86,29 @@ void configurarRotas() {
 
             Serial.print("[JOY] X: ");
             Serial.print(x);
-            Serial.print(" Y: ");
+            Serial.print(" | Y: ");
             Serial.println(y);
 
-            // Converte para velocidade (-255 a 255)
-            int velEsq = (y + x) * 255;
-            int velDir = (y - x) * 255;
+            // -------------------------------------------------
+            // CONVERSÃO: Joystick → Velocidade diferencial
+            // -------------------------------------------------
+            int velEsq = (y + x) * 100;
+            int velDir = (y - x) * 100;
 
+            // Aplica diretamente nos motores
             setVelocidade(velEsq, velDir);
         }
 
         server.send(200, "text/plain", "OK");
     });
 
+
+    // -------------------------------------------------
+    // ROTA: STATUS DO ROBÔ (API)
+    // -------------------------------------------------
     server.on("/status", []() {
+
+        // Futuro: substituir por dados reais dos sensores
         String json = "{";
 
         json += "\"distancia\": 25,";
@@ -83,27 +121,30 @@ void configurarRotas() {
     });
 }
 
-// =========================
+// =====================================================
 // INICIALIZAÇÃO DO WIFI
-// =========================
+// =====================================================
+
 void initWiFi() {
     Serial.println("[WIFI] Iniciando modo Access Point...");
 
-    // Define o modo WiFi para Access Point
+    // Define modo AP
     WiFi.mode(WIFI_AP);
 
-    // Inicia como ponto de acesso
+    // Cria rede
     WiFi.softAP(ssid, password);
-
     IPAddress IP = WiFi.softAPIP();
 
-    Serial.print("[WIFI] Rede criada!");
-    Serial.print("\n[WIFI] SSID: ");
-    Serial.print(ssid);
-    Serial.print("\n[WIFI] IP: ");
+    Serial.println("[WIFI] Rede criada!");
+    Serial.print("[WIFI] SSID: ");
+    Serial.println(ssid);
+    Serial.print("[WIFI] IP: ");
     Serial.println(IP);
 
+    // -------------------------------------------------
     // Inicializa sistema de arquivos
+    // -------------------------------------------------
+
     if (!LittleFS.begin()) {
         Serial.println("[ERRO] Falha ao montar LittleFS");
         return;
@@ -111,20 +152,20 @@ void initWiFi() {
 
     Serial.println("[FS] Sistema de arquivos montado");
 
+    // -------------------------------------------------
+    // Configura servidor
+    // -------------------------------------------------
+
     configurarRotas();
-
-    delay(100); // Pequeno delay para garantir que tudo esteja pronto
-
-    Serial.println(WiFi.softAPIP());
-    
+    delay(100); // garante estabilidade inicial
     server.begin();
-
     Serial.println("[SERVER] Servidor iniciado");
 }
 
-// =========================
-// LOOP WIFI (futuro)
-// =========================
+// =====================================================
+// LOOP WIFI
+// =====================================================
+
 void atualizarWiFi() {
     server.handleClient();
 }
