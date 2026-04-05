@@ -67,4 +67,24 @@ long getPulsosDir();
 //
 void resetEncoders();
 
+// =====================================================
+// ULTRASSÔNICO
+// =====================================================
+// Mede distância em centímetros
+//
+
+float getDistancia();
+
+// =====================================================
+// IMU (ACELERÔMETRO + GIROSCÓPIO)
+// =====================================================
+
+float getAccelX();
+float getAccelY();
+float getAccelZ();
+
+float getGyroX();
+float getGyroY();
+float getGyroZ();
+
 #endif
