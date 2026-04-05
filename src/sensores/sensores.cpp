@@ -4,8 +4,8 @@
 // DEFINIÇÃO DE PINOS
 // =========================
 
-#define PIN_ENCODER_ESQ 18
-#define PIN_ENCODER_DIR 5
+#define PIN_ENCODER_ESQ 5
+#define PIN_ENCODER_DIR 18
 
 // =========================
 // VARIÁVEIS GLOBAIS
