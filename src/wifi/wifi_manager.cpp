@@ -14,6 +14,7 @@
 #include "wifi_manager.h"
 #include "controle/controle.h"
 #include "motores/motores.h"
+#include "sensores/sensores.h"
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -108,12 +109,36 @@ static void configurarRotas() {
     // -------------------------------------------------
     server.on("/status", []() {
 
-        // Futuro: substituir por dados reais dos sensores
         String json = "{";
 
-        json += "\"distancia\": 25,";
-        json += "\"bateria\": 7.4,";
-        json += "\"estado\": \"ativo\"";
+        // =========================
+        // ULTRASSÔNICO
+        // =========================
+        json += "\"distancia\": " + String(getDistancia()) + ",";
+
+        // =========================
+        // ENCODERS
+        // =========================
+        json += "\"encoder_esq\": " + String(getPulsosEsq()) + ",";
+        json += "\"encoder_dir\": " + String(getPulsosDir()) + ",";
+
+        // =========================
+        // ACELERÔMETRO
+        // =========================
+        json += "\"accel\": {";
+        json += "\"x\": " + String(getAccelX(), 3) + ",";
+        json += "\"y\": " + String(getAccelY(), 3) + ",";
+        json += "\"z\": " + String(getAccelZ(), 3);
+        json += "},";
+
+        // =========================
+        // GIROSCÓPIO
+        // =========================
+        json += "\"gyro\": {";
+        json += "\"x\": " + String(getGyroX()) + ",";
+        json += "\"y\": " + String(getGyroY()) + ",";
+        json += "\"z\": " + String(getGyroZ());
+        json += "}";
 
         json += "}";
 
