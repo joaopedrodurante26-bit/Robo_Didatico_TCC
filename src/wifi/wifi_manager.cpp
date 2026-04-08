@@ -93,11 +93,7 @@ static void configurarRotas() {
             // -------------------------------------------------
             // CONVERSÃO: Joystick → Velocidade diferencial
             // -------------------------------------------------
-            int velEsq = (y + x) * 100;
-            int velDir = (y - x) * 100;
-
-            // Aplica diretamente nos motores
-            setVelocidade(velEsq, velDir);
+            setJoystick(x, y);
         }
 
         server.send(200, "text/plain", "OK");
