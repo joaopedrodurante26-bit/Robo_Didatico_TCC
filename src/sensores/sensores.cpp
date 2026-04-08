@@ -14,6 +14,7 @@
 #include "sensores.h"
 #include <Wire.h>
 #include <MPU6050.h>
+#include "../utils/logger.h"
 
 // =====================================================
 // DEFINIÇÃO DE PINOS
@@ -92,9 +93,9 @@ void initSensores() {
     mpu.initialize();
 
     if (!mpu.testConnection()) {
-        Serial.println("[ERRO] MPU6050 não conectado!");
+        logError("IMU: MPU6050 não conectado!");
     } else {
-        Serial.println("[IMU] MPU6050 conectado!");
+        logInfo("IMU: MPU6050 conectado com sucesso.");
     }
 }
 
@@ -138,7 +139,7 @@ void atualizarSensores() {
     if (mpu.testConnection()) {
         mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
     } else {
-        Serial.println("[ERRO] Falha ao ler MPU6050!");
+        logError("IMU: Falha ao ler MPU6050!");
         return;
     }
     

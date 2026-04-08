@@ -26,6 +26,7 @@
 #include "motores/motores.h"
 #include "sensores/sensores.h"
 #include "controle/controle.h"
+#include "utils/logger.h"
 #include "diagnostico/diagnostico.h"
 
 // =====================================================
@@ -37,7 +38,7 @@
 void setup() {
     // Inicializa comunicação serial para debug
     Serial.begin(115200);
-    Serial.println("\n[BOOT] Iniciando sistema do robô...");
+    logInfo("BOOT: Sistema do robô iniciando...");
 
     // -------------------------------------------------
     // INICIALIZAÇÃO DOS MÓDULOS
@@ -52,12 +53,13 @@ void setup() {
     initMotores();
     initSensores();
     initWiFi();
+    initLogger();
 
     atualizarSensores(); // Leitura inicial para diagnóstico
     delay(100); // Pequeno delay para estabilizar sensores
     executarDiagnostico();
 
-    Serial.println("[BOOT] Sistema inicializado com sucesso!");
+    logInfo("BOOT: Sistema inicializado com sucesso!");
 }
 
 // =====================================================

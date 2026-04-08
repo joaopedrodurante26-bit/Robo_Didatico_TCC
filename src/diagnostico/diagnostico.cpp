@@ -1,6 +1,7 @@
 #include "diagnostico.h"
 #include "../sensores/sensores.h"
 #include <LittleFS.h>
+#include "../utils/logger.h"
 
 void executarDiagnostico() {
 

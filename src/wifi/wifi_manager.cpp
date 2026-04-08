@@ -15,6 +15,7 @@
 #include "controle/controle.h"
 #include "motores/motores.h"
 #include "sensores/sensores.h"
+#include "../utils/logger.h"
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -43,12 +44,12 @@ static void configurarRotas() {
     // ROTA: Página principal
     // -------------------------------------------------
     server.on("/", []() {
-        Serial.println("[HTTP] Cliente acessou /");
+        logInfo("[HTTP] Cliente acessou /");
 
         File file = LittleFS.open("/index.html", "r");
 
         if (!file) {
-            Serial.println("[ERRO] index.html não encontrado!");
+            logError("index.html não encontrado!");
             server.send(500, "text/plain", "Erro ao abrir HTML");
             return;
         }
@@ -65,7 +66,7 @@ static void configurarRotas() {
         File file = LittleFS.open("/script.js", "r");
 
         if (!file) {
-            Serial.println("[ERRO] script.js não encontrado!");
+            logError("script.js não encontrado!");
             server.send(500, "text/plain", "Erro ao abrir JS");
             return;
         }
@@ -147,7 +148,7 @@ static void configurarRotas() {
 // =====================================================
 
 void initWiFi() {
-    Serial.println("[WIFI] Iniciando modo Access Point...");
+    logInfo("WIFI: Iniciando modo Access Point...");
 
     // Define modo AP
     WiFi.mode(WIFI_AP);
@@ -156,22 +157,19 @@ void initWiFi() {
     WiFi.softAP(ssid, password);
     IPAddress IP = WiFi.softAPIP();
 
-    Serial.println("[WIFI] Rede criada!");
-    Serial.print("[WIFI] SSID: ");
-    Serial.println(ssid);
-    Serial.print("[WIFI] IP: ");
-    Serial.println(IP);
-
+    logInfo("WIFI: Rede criada!");
+    logInfo("WIFI: SSID: " + String(ssid));
+    logInfo("WIFI: IP: " + String(IP));
     // -------------------------------------------------
     // Inicializa sistema de arquivos
     // -------------------------------------------------
 
     if (!LittleFS.begin()) {
-        Serial.println("[ERRO] Falha ao montar LittleFS");
+        logError("WIFI: Falha ao montar LittleFS");
         return;
     }
 
-    Serial.println("[FS] Sistema de arquivos montado");
+    logInfo("PS: Sistema de arquivos montado");
 
     // -------------------------------------------------
     // Configura servidor
@@ -180,7 +178,7 @@ void initWiFi() {
     configurarRotas();
     delay(100); // garante estabilidade inicial
     server.begin();
-    Serial.println("[SERVER] Servidor iniciado");
+    logInfo("SERVER: Servidor iniciado");
 }
 
 // =====================================================
