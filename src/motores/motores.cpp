@@ -1,51 +1,124 @@
 // =====================================================
-// MÓDULO DE MOTORES - IMPLEMENTAÇÃO (VESPA)
+// MÓDULO DE MOTORES - IMPLEMENTAÇÃO (PWM DIRETO)
 // =====================================================
 // Responsável por:
-// - Controlar os motores via biblioteca da Vespa
-// - Traduzir comandos do módulo de controle em movimento
-//
-// IMPORTANTE:
-// A Vespa já gerencia PWM e direção internamente.
-// NÃO usamos ledc diretamente aqui.
+// - Controle direto dos motores via PWM (ESP32)
+// - Controle diferencial (tanque)
 // =====================================================
 
 #include "motores.h"
 #include <Arduino.h>
 #include "../controle/controle.h"
-#include <RoboCore_Vespa.h>
 
 // =====================================================
-// OBJETO DE CONTROLE DOS MOTORES
+// DEFINIÇÃO DE PINOS
+// =====================================================
+// Ajuste conforme sua placa Vespa
+
+#define PWM_ESQ  13
+#define DIR_ESQ  14
+
+#define PWM_DIR  27
+#define DIR_DIR  4
+
+// =====================================================
+// CONFIGURAÇÃO PWM (LEDC)
 // =====================================================
 
-VespaMotors motores;
+#define CANAL_ESQ 0
+#define CANAL_DIR 1
+
+#define FREQ 1000
+#define RES 8
+
+// =====================================================
+// VARIÁVEIS INTERNAS
+// =====================================================
+
+static int velEsqAtual = 0;
+static int velDirAtual = 0;
+
+// =====================================================
+// FUNÇÃO DE SUAVIZAÇÃO (RAMP)
+// =====================================================
+
+int suavizar(int atual, int alvo, int passo = 5) {
+    if (atual < alvo) return min(atual + passo, alvo);
+    if (atual > alvo) return max(atual - passo, alvo);
+    return atual;
+}
 
 // =====================================================
 // INICIALIZAÇÃO
 // =====================================================
 
 void initMotores() {
-    // A inicialização já acontece no construtor
-    motores.stop();
+    ledcSetup(CANAL_ESQ, FREQ, RES);
+    ledcAttachPin(PWM_ESQ, CANAL_ESQ);
+
+    ledcSetup(CANAL_DIR, FREQ, RES);
+    ledcAttachPin(PWM_DIR, CANAL_DIR);
+
+    pinMode(DIR_ESQ, OUTPUT);
+    pinMode(DIR_DIR, OUTPUT);
+
+    pararMotores();
 }
 
 // =====================================================
 // CONTROLE DE BAIXO NÍVEL
 // =====================================================
-// Converte velocidades diferenciais para a API da Vespa
-//
 
-void setVelocidade(int velEsq, int velDir) {
-    // Limita valores
-    velEsq = constrain(velEsq, -100, 100);
-    velDir = constrain(velDir, -100, 100);
-    // Aplica diretamente na Vespa
-    motores.turn(velEsq, velDir);
+void aplicarPWM(int velEsq, int velDir) {
+
+    // =========================
+    // DIREÇÃO
+    // =========================
+
+    if (velEsq >= 0) {
+        digitalWrite(DIR_ESQ, HIGH);
+    } else {
+        digitalWrite(DIR_ESQ, LOW);
+        velEsq = -velEsq;
+    }
+
+    if (velDir >= 0) {
+        digitalWrite(DIR_DIR, HIGH);
+    } else {
+        digitalWrite(DIR_DIR, LOW);
+        velDir = -velDir;
+    }
+
+    // =========================
+    // LIMITAÇÃO
+    // =========================
+
+    velEsq = constrain(velEsq, 0, 255);
+    velDir = constrain(velDir, 0, 255);
+
+    // =========================
+    // APLICA PWM
+    // =========================
+
+    ledcWrite(CANAL_ESQ, velEsq);
+    ledcWrite(CANAL_DIR, velDir);
 }
 
 // =====================================================
-// CONTROLE DE ALTO NÍVEL
+// INTERFACE PRINCIPAL
+// =====================================================
+
+void setVelocidade(int velEsq, int velDir) {
+
+    // Suavização
+    velEsqAtual = suavizar(velEsqAtual, velEsq);
+    velDirAtual = suavizar(velDirAtual, velDir);
+
+    aplicarPWM(velEsqAtual, velDirAtual);
+}
+
+// =====================================================
+// MOVIMENTOS DE ALTO NÍVEL
 // =====================================================
 
 void moverFrente(int v) {
@@ -73,24 +146,25 @@ void pararMotores() {
 // =====================================================
 
 void atualizarMotores() {
+
     Comando cmd = getComando();
 
     switch (cmd) {
 
         case FRENTE:
-            moverFrente(100);
+            moverFrente(200);
             break;
 
         case TRAS:
-            moverTras(100);
+            moverTras(200);
             break;
 
         case ESQUERDA:
-            virarEsquerda(100);
+            virarEsquerda(200);
             break;
 
         case DIREITA:
-            virarDireita(100);
+            virarDireita(200);
             break;
 
         case PARAR:
