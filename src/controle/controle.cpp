@@ -1,94 +1,85 @@
 // =====================================================
-// MÓDULO DE CONTROLE - IMPLEMENTAÇÃO
+// MÓDULO DE CONTROLE - IMPLEMENTAÇÃO (REFORMULADO)
 // =====================================================
 // Responsável por:
-// - Armazenar o comando atual do robô
-// - Receber comandos externos (Wi-Fi, joystick)
-// - Fornecer o comando para outros módulos (motores)
-//
-// Este módulo NÃO executa ações diretamente.
-// Ele apenas define "o que deve ser feito".
+// - Receber entradas (joystick)
+// - Processar lógica de movimento
+// - Gerar velocidades diferenciais
 // =====================================================
 
 #include "controle.h"
 
-// =====================================================
-// VARIÁVEIS GLOBAIS (ESTADO DO SISTEMA)
-// =====================================================
+// =========================
+// VARIÁVEIS INTERNAS
+// =========================
 
-// Armazena o comando atual do robô
-static Comando comandoAtual = PARAR;
+// Entrada (joystick)
+static float inputX = 0.0;
+static float inputY = 0.0;
 
-// (Futuro) Estado geral do sistema
-// static EstadoSistema estadoAtual = MANUAL;
+// Saída (motores)
+static int velEsq = 0;
+static int velDir = 0;
 
-// =====================================================
+// Ganho geral (limite de velocidade)
+static int ganho = 255;
+
+// =========================
 // INICIALIZAÇÃO
-// =====================================================
+// =========================
 
 void initControle() {
-    // Define estado inicial do robô
-    comandoAtual = PARAR;
-    // IMPORTANTE:
-    // A variável abaixo estava sendo criada localmente e não era usada.
-    // Se quisermos um estado global, ela deve ser declarada fora da função.
-    //
-    // bool sistemaAtivo = true;  ← REMOVIDO (não funcional)
+    inputX = 0;
+    inputY = 0;
+    velEsq = 0;
+    velDir = 0;
 }
 
-// =====================================================
-// SETTERS (ENTRADA DE COMANDOS)
-// =====================================================
+// =========================
+// SET INPUT
+// =========================
 
-void setComando(Comando cmd) {
-    // Atualiza o comando atual
-    comandoAtual = cmd;
+void setJoystick(float x, float y) {
+    inputX = constrain(x, -1.0, 1.0);
+    inputY = constrain(y, -1.0, 1.0);
 }
 
-// =====================================================
-// GETTERS (SAÍDA PARA OUTROS MÓDULOS)
-// =====================================================
-
-Comando getComando() {
-    return comandoAtual;
-}
-
-// =====================================================
-// LÓGICA DE CONTROLE
-// =====================================================
-// Esta função NÃO executa motores diretamente.
-// Ela serve como ponto central para lógica futura:
-//
-// - filtros de comando
-// - prioridade entre modos
-// - integração com sensores
-// - modo automático
-//
-// Atualmente, funciona como estrutura base.
-//
+// =========================
+// PROCESSAMENTO
+// =========================
 
 void atualizarControle() {
-    switch (comandoAtual) {
 
-        case FRENTE:
-            // Futuro: lógica para movimento frontal
-            break;
+    // =========================
+    // NORMALIZAÇÃO
+    // =========================
 
-        case TRAS:
-            // Futuro: lógica para movimento reverso
-            break;
+    float soma = inputY + inputX;
+    float diff = inputY - inputX;
 
-        case ESQUERDA:
-            // Futuro: lógica para rotação à esquerda
-            break;
+    float maxVal = max(abs(soma), abs(diff));
 
-        case DIREITA:
-            // Futuro: lógica para rotação à direita
-            break;
-
-        case PARAR:
-        default:
-            // Futuro: lógica para parada segura
-            break;
+    if (maxVal > 1.0) {
+        soma /= maxVal;
+        diff /= maxVal;
     }
+
+    // =========================
+    // CONVERSÃO PARA PWM
+    // =========================
+
+    velEsq = soma * ganho;
+    velDir = diff * ganho;
+}
+
+// =========================
+// GETTERS
+// =========================
+
+int getVelEsq() {
+    return velEsq;
+}
+
+int getVelDir() {
+    return velDir;
 }

@@ -146,30 +146,5 @@ void pararMotores() {
 // =====================================================
 
 void atualizarMotores() {
-
-    Comando cmd = getComando();
-
-    switch (cmd) {
-
-        case FRENTE:
-            moverFrente(200);
-            break;
-
-        case TRAS:
-            moverTras(200);
-            break;
-
-        case ESQUERDA:
-            virarEsquerda(200);
-            break;
-
-        case DIREITA:
-            virarDireita(200);
-            break;
-
-        case PARAR:
-        default:
-            pararMotores();
-            break;
-    }
+    setVelocidade(getVelEsq(), getVelDir());
 }
