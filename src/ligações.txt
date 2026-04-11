@@ -1,0 +1,13 @@
+PWM_ESQ = 13 (integrado)
+DIR_ESQ = 14 (integrado)
+PWM_DIR = 27 (integrado)
+DIR_DIR = 4 (integrado)
+
+ENCODER_ESQ = 5 = SS
+ENCODER_DIR = 18 = SCK
+
+PIN_TRIG = 23 = MOSI
+PIN_ECHO = 19 = MISO
+
+IMU_SDA = 21
+IMU_SCL = 22
