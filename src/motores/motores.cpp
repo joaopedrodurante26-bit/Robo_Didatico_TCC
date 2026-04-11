@@ -62,7 +62,11 @@ void initMotores() {
     pinMode(DIR_ESQ, OUTPUT);
     pinMode(DIR_DIR, OUTPUT);
 
-    pararMotores();
+    digitalWrite(DIR_ESQ, LOW);
+    digitalWrite(DIR_DIR, LOW);
+
+    ledcWrite(CANAL_ESQ, 0);
+    ledcWrite(CANAL_DIR, 0);
 }
 
 // =====================================================
