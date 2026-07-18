@@ -80,7 +80,7 @@ void loop() {
     // 4. WiFi     → comunicação
     //
 
-    atualizarSensores();
+    //atualizarSensores();
     atualizarControle();
     atualizarMotores();
     atualizarWiFi();
