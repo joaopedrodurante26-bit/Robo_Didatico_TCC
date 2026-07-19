@@ -28,6 +28,7 @@
 #include "controle/controle.h"
 #include "utils/logger.h"
 #include "diagnostico/diagnostico.h"
+#include "testes/testes.h"
 
 // =====================================================
 // SETUP
@@ -43,12 +44,8 @@ void setup() {
     // -------------------------------------------------
     // INICIALIZAÇÃO DOS MÓDULOS
     // -------------------------------------------------
-    // Ordem importante:
-    // - Controle antes de motores (boa prática futura)
-    // - Sensores antes de uso
-    // - WiFi por último (depende do sistema já estável)
-    //
 
+    testes_iniciar();
     initControle();
     initMotores();
     initSensores();

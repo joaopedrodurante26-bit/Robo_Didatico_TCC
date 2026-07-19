@@ -11,23 +11,12 @@
 // portanto cuidados com concorrência são essenciais.
 // =====================================================
 
-#include "sensores.h"
 #include <Wire.h>
-#include <MPU6050.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+
+#include "../config/pinos.h"
 #include "../utils/logger.h"
-
-// =====================================================
-// DEFINIÇÃO DE PINOS
-// =====================================================
-// Escolhidos com base na disponibilidade da Vespa
-// e compatibilidade com interrupções.
-//
-
-#define PIN_ENCODER_ESQ 5
-#define PIN_ENCODER_DIR 18
-
-#define PIN_TRIG 23
-#define PIN_ECHO 19
 
 // =====================================================
 // VARIÁVEIS GLOBAIS (COMPARTILHADAS COM ISR)
@@ -44,7 +33,7 @@ static volatile long pulsosDir = 0;
 static float distancia = 0;
 
 // IMU
-static MPU6050 mpu;
+static Adafruit_MPU6050 mpu;
 
 static float accelX = 0, accelY = 0, accelZ = 0;
 static float gyroX = 0, gyroY = 0, gyroZ = 0;
@@ -72,12 +61,12 @@ void initSensores() {
     // =========================
     // ENCODERS
     // =========================
-    pinMode(PIN_ENCODER_ESQ, INPUT_PULLUP);
-    pinMode(PIN_ENCODER_DIR, INPUT_PULLUP);
+    pinMode(PIN_ENCODER_E, INPUT_PULLUP);
+    pinMode(PIN_ENCODER_D, INPUT_PULLUP);
 
     // Associa interrupções aos pinos
-    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_ESQ), contarPulsoEsq, RISING);
-    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_DIR), contarPulsoDir, RISING);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_E), contarPulsoEsq, RISING);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_D), contarPulsoDir, RISING);
 
     // =========================
     // ULTRASSÔNICO
@@ -88,14 +77,20 @@ void initSensores() {
     // =========================
     // IMU (I2C)
     // =========================
-    Wire.begin(21, 22); // SDA, SCL
+    Wire.begin(PIN_SDA, PIN_SCL);
 
-    mpu.initialize();
-
-    if (!mpu.testConnection()) {
-        logError("IMU: MPU6050 não conectado!");
-    } else {
+    if (!mpu.begin())
+    {
+        logError("IMU: MPU6050 não encontrado!");
+    }
+    else
+    {
         logInfo("IMU: MPU6050 conectado com sucesso.");
+
+        // Configuração padrão
+        mpu.setAccelerometerRange(MPU6050_RANGE_2_G);
+        mpu.setGyroRange(MPU6050_RANGE_250_DEG);
+        mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
     }
 }
 
@@ -131,26 +126,19 @@ void atualizarSensores() {
     // =========================
     // IMU
     // =========================
-    int16_t ax, ay, az;
-    int16_t gx, gy, gz;
+    sensors_event_t accel;
+    sensors_event_t gyro;
+    sensors_event_t temp;
 
-    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    mpu.getEvent(&accel, &gyro, &temp);
 
-    if (mpu.testConnection()) {
-        mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-    } else {
-        logError("IMU: Falha ao ler MPU6050!");
-        return;
-    }
-    
-    // Conversão simples (escala padrão)
-    accelX = ax / 16384.0;
-    accelY = ay / 16384.0;
-    accelZ = az / 16384.0;
+    accelX = accel.acceleration.x;
+    accelY = accel.acceleration.y;
+    accelZ = accel.acceleration.z;
 
-    gyroX = gx / 131.0;
-    gyroY = gy / 131.0;
-    gyroZ = gz / 131.0;
+    gyroX = gyro.gyro.x;
+    gyroY = gyro.gyro.y;
+    gyroZ = gyro.gyro.z;
 }
 
 // =====================================================

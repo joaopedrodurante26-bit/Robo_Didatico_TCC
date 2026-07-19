@@ -1,0 +1,12 @@
+#ifndef CONFIGURACAO_H
+#define CONFIGURACAO_H
+
+#define SERIAL_BAUDRATE 115200
+
+#define PWM_FREQUENCIA 1000
+#define PWM_RESOLUCAO 8
+
+#define PWM_CANAL_MOTOR_E 0
+#define PWM_CANAL_MOTOR_D 1
+
+#endif
