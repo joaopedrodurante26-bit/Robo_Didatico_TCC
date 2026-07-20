@@ -15,6 +15,7 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 
+#include "sensores.h"
 #include "../config/pinos.h"
 #include "../utils/logger.h"
 
@@ -77,7 +78,7 @@ void initSensores() {
     // =========================
     // IMU (I2C)
     // =========================
-    Wire.begin(PIN_SDA, PIN_SCL);
+    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
 
     if (!mpu.begin())
     {

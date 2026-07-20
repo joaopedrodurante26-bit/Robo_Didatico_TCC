@@ -1,31 +1,16 @@
 #ifndef TESTES_H
 #define TESTES_H
 
-#include <Arduino.h>
+// Módulo de testes / console de diagnóstico
+// - Implementa uma interface via Serial para manutenção
+// - Máquina de estados com submenus para Motores, Sensores, WiFi, FS e Diagnóstico
+// - Usa os módulos já existentes (motores, sensores, wifi, diagnostico, LittleFS)
 
-//======================================================
-// Inicialização
-//======================================================
-
+// Inicializa o console de testes. Deve ser chamado no setup().
 void testes_iniciar();
 
-//======================================================
-// Loop principal do modo de testes
-//======================================================
-
-void testes_atualizar();
-
-//======================================================
-// Comandos
-//======================================================
-
-void testes_processarComando(String comando);
-
-//======================================================
-// Mensagens
-//======================================================
-
-void testes_exibirCabecalho();
-void testes_exibirAjuda();
+// Deve ser chamado periodicamente no loop() para processar entrada/streams.
+void atualizarTestes();
 
 #endif
+

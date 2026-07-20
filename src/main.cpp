@@ -85,6 +85,9 @@ void loop() {
     atualizarMotores();
     atualizarWiFi();
 
+    // Atualiza console de testes (processa comandos via Serial)
+    atualizarTestes();
+
 
     // -------------------------------------------------
     // CONTROLE DE LOOP
