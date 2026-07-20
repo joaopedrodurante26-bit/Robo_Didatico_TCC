@@ -37,26 +37,29 @@
 //
 
 void setup() {
-    // Inicializa comunicação serial para debug
+    // Comunicação serial
     Serial.begin(115200);
-    logInfo("BOOT: Sistema do robô iniciando...");
+    delay(1000);
 
-    // -------------------------------------------------
-    // INICIALIZAÇÃO DOS MÓDULOS
-    // -------------------------------------------------
-
-    testes_iniciar();
-    initControle();
-    initMotores();
-    initSensores();
-    initWiFi();
+    // Logger
     initLogger();
 
-    atualizarSensores(); // Leitura inicial para diagnóstico
-    delay(100); // Pequeno delay para estabilizar sensores
-    executarDiagnostico();
+    logInfo("BOOT: Sistema do robô iniciando...");
 
-    logInfo("BOOT: Sistema inicializado com sucesso!");
+    // Hardware
+    initMotores();
+    initSensores();
+
+    // Comunicação
+    initWiFi();
+
+    // Controle
+    initControle();
+
+    // Console de testes
+    testes_iniciar();
+
+    logInfo("BOOT: Sistema inicializado!");
 }
 
 // =====================================================

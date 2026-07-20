@@ -9,4 +9,7 @@
 #define PWM_CANAL_MOTOR_E 0
 #define PWM_CANAL_MOTOR_D 1
 
+#define PWM_MAX 255
+#define PWM_MIN -255
+
 #endif

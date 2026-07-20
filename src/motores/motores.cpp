@@ -7,29 +7,14 @@
 // =====================================================
 
 #include "motores.h"
+
 #include <Arduino.h>
+
+#include "../config/pinos.h"
+#include "../config/configuracao.h"
 #include "../controle/controle.h"
-
-// =====================================================
-// DEFINIÇÃO DE PINOS
-// =====================================================
-// Ajuste conforme sua placa Vespa
-
-#define PWM_ESQ  13
-#define DIR_ESQ  14
-
-#define PWM_DIR  27
-#define DIR_DIR  4
-
-// =====================================================
-// CONFIGURAÇÃO PWM (LEDC)
-// =====================================================
-
-#define CANAL_ESQ 0
-#define CANAL_DIR 1
-
-#define FREQ 1000
-#define RES 8
+#include "../utils/logger.h"
+#include "../config/configuracao.h"
 
 // =====================================================
 // VARIÁVEIS INTERNAS
@@ -42,83 +27,90 @@ static int velDirAtual = 0;
 // FUNÇÃO DE SUAVIZAÇÃO (RAMP)
 // =====================================================
 
-int suavizar(int atual, int alvo, int passo = 5) {
+static int suavizar(int atual, int alvo, int passo = 5) {
     if (atual < alvo) return min(atual + passo, alvo);
     if (atual > alvo) return max(atual - passo, alvo);
     return atual;
+}
+
+// -----------------------------------------------------
+// Controla um motor individual.
+// velocidade > 0 -> frente
+// velocidade < 0 -> ré
+// velocidade = 0 -> parado
+// -----------------------------------------------------
+
+static void controlarMotor(
+    uint8_t canalPWM,
+    uint8_t pinoIN1,
+    uint8_t pinoIN2,
+    int velocidade)
+{
+    velocidade = constrain(velocidade, PWM_MIN, PWM_MAX);
+
+    if (velocidade > 0)
+    {
+        digitalWrite(pinoIN1, HIGH);
+        digitalWrite(pinoIN2, LOW);
+    }
+    else if (velocidade < 0)
+    {
+        digitalWrite(pinoIN1, LOW);
+        digitalWrite(pinoIN2, HIGH);
+        velocidade = -velocidade;
+    }
+    else
+    {
+        digitalWrite(pinoIN1, LOW);
+        digitalWrite(pinoIN2, LOW);
+    }
+
+    ledcWrite(canalPWM, velocidade);
 }
 
 // =====================================================
 // INICIALIZAÇÃO
 // =====================================================
 
-void initMotores() {
-    ledcSetup(CANAL_ESQ, FREQ, RES);
-    ledcAttachPin(PWM_ESQ, CANAL_ESQ);
+void initMotores()
+{
+    pinMode(PIN_MOTOR_E_IN1, OUTPUT);
+    pinMode(PIN_MOTOR_E_IN2, OUTPUT);
 
-    ledcSetup(CANAL_DIR, FREQ, RES);
-    ledcAttachPin(PWM_DIR, CANAL_DIR);
+    pinMode(PIN_MOTOR_D_IN1, OUTPUT);
+    pinMode(PIN_MOTOR_D_IN2, OUTPUT);
 
-    pinMode(DIR_ESQ, OUTPUT);
-    pinMode(DIR_DIR, OUTPUT);
+    ledcSetup(PWM_CANAL_MOTOR_E, PWM_FREQUENCIA, PWM_RESOLUCAO);
+    ledcAttachPin(PIN_MOTOR_E_PWM, PWM_CANAL_MOTOR_E);
 
-    digitalWrite(DIR_ESQ, LOW);
-    digitalWrite(DIR_DIR, LOW);
+    ledcSetup(PWM_CANAL_MOTOR_D, PWM_FREQUENCIA, PWM_RESOLUCAO);
+    ledcAttachPin(PIN_MOTOR_D_PWM, PWM_CANAL_MOTOR_D);
 
-    ledcWrite(CANAL_ESQ, 0);
-    ledcWrite(CANAL_DIR, 0);
-}
+    pararMotores();
 
-// =====================================================
-// CONTROLE DE BAIXO NÍVEL
-// =====================================================
-
-void aplicarPWM(int velEsq, int velDir) {
-
-    // =========================
-    // DIREÇÃO
-    // =========================
-
-    if (velEsq >= 0) {
-        digitalWrite(DIR_ESQ, HIGH);
-    } else {
-        digitalWrite(DIR_ESQ, LOW);
-        velEsq = -velEsq;
-    }
-
-    if (velDir >= 0) {
-        digitalWrite(DIR_DIR, HIGH);
-    } else {
-        digitalWrite(DIR_DIR, LOW);
-        velDir = -velDir;
-    }
-
-    // =========================
-    // LIMITAÇÃO
-    // =========================
-
-    velEsq = constrain(velEsq, 0, 255);
-    velDir = constrain(velDir, 0, 255);
-
-    // =========================
-    // APLICA PWM
-    // =========================
-
-    ledcWrite(CANAL_ESQ, velEsq);
-    ledcWrite(CANAL_DIR, velDir);
+    logInfo("Motores inicializados.");
 }
 
 // =====================================================
 // INTERFACE PRINCIPAL
 // =====================================================
 
-void setVelocidade(int velEsq, int velDir) {
-
-    // Suavização
+void setVelocidade(int velEsq, int velDir)
+{
     velEsqAtual = suavizar(velEsqAtual, velEsq);
     velDirAtual = suavizar(velDirAtual, velDir);
 
-    aplicarPWM(velEsqAtual, velDirAtual);
+    controlarMotor(
+        PWM_CANAL_MOTOR_E,
+        PIN_MOTOR_E_IN1,
+        PIN_MOTOR_E_IN2,
+        velEsqAtual);
+
+    controlarMotor(
+        PWM_CANAL_MOTOR_D,
+        PIN_MOTOR_D_IN1,
+        PIN_MOTOR_D_IN2,
+        velDirAtual);
 }
 
 // =====================================================
