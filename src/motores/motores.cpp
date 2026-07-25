@@ -96,10 +96,15 @@ void initMotores()
 // INTERFACE PRINCIPAL
 // =====================================================
 
-void setVelocidade(int velEsq, int velDir)
+static void aplicarVelocidadeInterna(int velEsq, int velDir, bool usarSuavizacao)
 {
-    velEsqAtual = suavizar(velEsqAtual, velEsq);
-    velDirAtual = suavizar(velDirAtual, velDir);
+    if (usarSuavizacao) {
+        velEsqAtual = suavizar(velEsqAtual, velEsq);
+        velDirAtual = suavizar(velDirAtual, velDir);
+    } else {
+        velEsqAtual = velEsq;
+        velDirAtual = velDir;
+    }
 
     controlarMotor(
         PWM_CANAL_MOTOR_E,
@@ -114,24 +119,29 @@ void setVelocidade(int velEsq, int velDir)
         velDirAtual);
 }
 
+void setVelocidade(int velEsq, int velDir)
+{
+    aplicarVelocidadeInterna(velEsq, velDir, false);
+}
+
 // =====================================================
 // MOVIMENTOS DE ALTO NÍVEL
 // =====================================================
 
 void moverFrente(int v) {
-    setVelocidade(v, v);
-}
-
-void moverTras(int v) {
     setVelocidade(-v, -v);
 }
 
+void moverTras(int v) {
+    setVelocidade(v, v);
+}
+
 void virarEsquerda(int v) {
-    setVelocidade(-v, v);
+    setVelocidade(v, -v);
 }
 
 void virarDireita(int v) {
-    setVelocidade(v, -v);
+    setVelocidade(-v, v);
 }
 
 void pararMotores() {
@@ -146,6 +156,6 @@ void atualizarMotores() {
     RobotMode modo = getCurrentMode();
 
     if (modo == MODE_REMOTE || modo == MODE_AUTONOMOUS) {
-        setVelocidade(getVelEsq(), getVelDir());
+        aplicarVelocidadeInterna(getVelEsq(), getVelDir(), true);
     }
 }

@@ -1,11 +1,71 @@
 #include "cmd_motores.h"
 
+#include <Arduino.h>
 #include "../../motores/motores.h"
 
-static void cmd_motor_f(String args) { int v = args.toInt(); moverFrente(v); Serial.println("[OK] MOTOR F " + String(v)); }
-static void cmd_motor_t(String args) { int v = args.toInt(); moverTras(v); Serial.println("[OK] MOTOR T " + String(v)); }
-static void cmd_motor_ve(String args) { int v = args.toInt(); virarEsquerda(v); Serial.println("[OK] MOTOR VE " + String(v)); }
-static void cmd_motor_vd(String args) { int v = args.toInt(); virarDireita(v); Serial.println("[OK] MOTOR VD " + String(v)); }
+static void executarComMotorTemporizado(void (*acao)(int), int velocidade, int tempoMs) {
+    if (tempoMs > 0) {
+        acao(velocidade);
+        delay(tempoMs);
+        pararMotores();
+        return;
+    }
+
+    acao(velocidade);
+}
+
+static void cmd_motor_f(String args) {
+    int primeira = args.toInt();
+    int segunda = 0;
+    int espaco = args.indexOf(' ');
+
+    if (espaco != -1) {
+        segunda = args.substring(espaco + 1).toInt();
+    }
+
+    executarComMotorTemporizado(moverFrente, primeira, segunda * 1000);
+    Serial.println("[OK] MOTOR F " + String(primeira) + " " + String(segunda));
+}
+
+static void cmd_motor_t(String args) {
+    int primeira = args.toInt();
+    int segunda = 0;
+    int espaco = args.indexOf(' ');
+
+    if (espaco != -1) {
+        segunda = args.substring(espaco + 1).toInt();
+    }
+
+    executarComMotorTemporizado(moverTras, primeira, segunda * 1000);
+    Serial.println("[OK] MOTOR T " + String(primeira) + " " + String(segunda));
+}
+
+static void cmd_motor_ve(String args) {
+    int primeira = args.toInt();
+    int segunda = 0;
+    int espaco = args.indexOf(' ');
+
+    if (espaco != -1) {
+        segunda = args.substring(espaco + 1).toInt();
+    }
+
+    executarComMotorTemporizado(virarEsquerda, primeira, segunda * 1000);
+    Serial.println("[OK] MOTOR VE " + String(primeira) + " " + String(segunda));
+}
+
+static void cmd_motor_vd(String args) {
+    int primeira = args.toInt();
+    int segunda = 0;
+    int espaco = args.indexOf(' ');
+
+    if (espaco != -1) {
+        segunda = args.substring(espaco + 1).toInt();
+    }
+
+    executarComMotorTemporizado(virarDireita, primeira, segunda * 1000);
+    Serial.println("[OK] MOTOR VD " + String(primeira) + " " + String(segunda));
+}
+
 static void cmd_motor_e(String args) { int v = args.toInt(); setVelocidade(v, 0); Serial.println("[OK] MOTOR E " + String(v)); }
 static void cmd_motor_d(String args) { int v = args.toInt(); setVelocidade(0, v); Serial.println("[OK] MOTOR D " + String(v)); }
 static void cmd_motor_stop(String args) { pararMotores(); Serial.println("[OK] MOTOR STOP"); }
