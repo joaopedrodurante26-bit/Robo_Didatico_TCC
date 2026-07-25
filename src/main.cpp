@@ -28,6 +28,7 @@
 #include "controle/controle.h"
 #include "utils/logger.h"
 #include "diagnostico/diagnostico.h"
+#include "robot/robot.h"
 #include "testes/testes.h"
 
 // =====================================================
@@ -53,10 +54,10 @@ void setup() {
     // Comunicação
     initWiFi();
 
-    // Controle
-    initControle();
+    // Gerenciador central
+    initRobot();
 
-    // Console de testes
+    // Console administrativo
     testes_iniciar();
 
     logInfo("BOOT: Sistema inicializado!");
@@ -80,13 +81,16 @@ void loop() {
     // 4. WiFi     → comunicação
     //
 
-    //atualizarSensores();
-    atualizarControle();
+    // Interface
+    atualizarTestes();
+
+    // Gerenciador central
+    robot_update();
+
+    // Hardware
+    atualizarSensores();
     atualizarMotores();
     atualizarWiFi();
-
-    // Atualiza console de testes (processa comandos via Serial)
-    atualizarTestes();
 
 
     // -------------------------------------------------

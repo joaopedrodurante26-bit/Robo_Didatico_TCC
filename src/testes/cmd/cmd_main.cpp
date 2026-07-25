@@ -3,6 +3,7 @@
 #include <LittleFS.h>
 #include <WiFi.h>
 #include "../../diagnostico/diagnostico.h"
+#include "../../robot/robot.h"
 
 // Protótipos locais das funções de comando
 static void cmd_help_main(String args);
@@ -10,6 +11,7 @@ static void cmd_status(String args);
 static void cmd_version(String args);
 static void cmd_reboot(String args);
 static void cmd_clear(String args);
+static void cmd_mode(String args);
 static void cmd_enter_motor(String args);
 static void cmd_enter_sensor(String args);
 static void cmd_wifi(String args);
@@ -20,6 +22,7 @@ static Command comandosMain[] = {
     {"HELP", cmd_help_main, "Mostra ajuda"},
     {"STATUS", cmd_status, "Estado do sistema"},
     {"VERSION", cmd_version, "Versão do firmware"},
+    {"MODE", cmd_mode, "Altera o modo operacional"},
     {"REBOOT", cmd_reboot, "Reinicia o ESP32"},
     {"CLEAR", cmd_clear, "Limpa o terminal"},
     {"MOTOR", cmd_enter_motor, "Menu dos motores"},
@@ -46,7 +49,8 @@ static void cmd_help_main(String args) {
 
 static void cmd_status(String args) {
     Serial.println("Sistema: OK");
-    Serial.println("RAM Livre: ? kB");
+    Serial.println("Modo atual: " + String(robotModeToString(getCurrentMode())));
+    Serial.println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
 }
 
 static void cmd_version(String args) {
@@ -61,6 +65,34 @@ static void cmd_reboot(String args) {
 
 static void cmd_clear(String args) {
     for (int i=0;i<30;i++) Serial.println();
+}
+
+static void cmd_mode(String args) {
+    String entrada = args;
+    entrada.trim();
+    entrada.toUpperCase();
+
+    if (entrada.length() == 0) {
+        Serial.println("Modo atual: " + String(robotModeToString(getCurrentMode())));
+        return;
+    }
+
+    if (entrada == "IDLE") {
+        setRobotMode(MODE_IDLE);
+    } else if (entrada == "REMOTE") {
+        setRobotMode(MODE_REMOTE);
+    } else if (entrada == "AUTO" || entrada == "AUTONOMOUS") {
+        setRobotMode(MODE_AUTONOMOUS);
+    } else if (entrada == "TEST") {
+        setRobotMode(MODE_TEST);
+    } else if (entrada == "DIAG" || entrada == "DIAGNOSTIC") {
+        setRobotMode(MODE_DIAGNOSTIC);
+    } else {
+        Serial.println("Modo inválido. Use IDLE, REMOTE, AUTO, TEST ou DIAG.");
+        return;
+    }
+
+    Serial.println("Modo alterado para: " + String(robotModeToString(getCurrentMode())));
 }
 
 static void cmd_enter_motor(String args) {

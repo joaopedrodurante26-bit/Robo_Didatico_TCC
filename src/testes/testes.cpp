@@ -5,6 +5,7 @@
 #include "cmd/cmd_main.h"
 #include "cmd/cmd_motores.h"
 #include "cmd/cmd_sensores.h"
+#include "../robot/robot.h"
 
 void testes_iniciar() {
 	size_t n;
