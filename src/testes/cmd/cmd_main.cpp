@@ -92,7 +92,7 @@ static void cmd_mode(String args) {
         return;
     }
 
-    Serial.println("Modo alterado para: " + String(robotModeToString(getCurrentMode())));
+    Serial.println("[OK] Comando MODE executado: " + String(robotModeToString(getCurrentMode())));
 }
 
 static void cmd_enter_motor(String args) {
