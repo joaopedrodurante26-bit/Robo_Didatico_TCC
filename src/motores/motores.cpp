@@ -13,6 +13,7 @@
 #include "../config/pinos.h"
 #include "../config/configuracao.h"
 #include "../controle/controle.h"
+#include "../robot/robot.h"
 #include "../utils/logger.h"
 #include "../config/configuracao.h"
 
@@ -142,5 +143,9 @@ void pararMotores() {
 // =====================================================
 
 void atualizarMotores() {
-    setVelocidade(getVelEsq(), getVelDir());
+    RobotMode modo = getCurrentMode();
+
+    if (modo == MODE_REMOTE || modo == MODE_AUTONOMOUS) {
+        setVelocidade(getVelEsq(), getVelDir());
+    }
 }
