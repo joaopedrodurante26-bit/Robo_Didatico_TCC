@@ -9,22 +9,33 @@ struct RobotState {
     RobotMode mode;
     InterfaceMode interfaceMode;
 
+    int pwmLeft;
+    int pwmRight;
+
+    long encoderLeft;
+    long encoderRight;
+
+    float distance;
+
+    float accel[3];
+    float gyro[3];
+
+    bool wifiConnected;
+
+    unsigned long uptime;
+
+    // Campos legados mantidos para compatibilidade de telas/comandos atuais.
     long encoderEsq;
     long encoderDir;
-
     float distanciaCm;
-
     float accelX;
     float accelY;
     float accelZ;
-
     float gyroX;
     float gyroY;
     float gyroZ;
-
     int velEsqCmd;
     int velDirCmd;
-
     unsigned long uptimeMs;
 
     int wifiClients;

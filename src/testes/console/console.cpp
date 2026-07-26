@@ -212,6 +212,7 @@ static void executarComando(String cmd) {
     Serial.println();
     console_appendWebLine(cmd);
     String linha = cmd;
+    linha.trim();
     String up = toUpper(linha);
 
     // Interrupção global de stream em qualquer estado.
@@ -222,22 +223,55 @@ static void executarComando(String cmd) {
         return;
     }
 
+    // Comandos qualificados funcionam em qualquer estado.
+    if (up.startsWith("MOTOR ")) {
+        String sub = linha.substring(6);
+        sub.trim();
+        if (sub.length() > 0 && executarComandoDaTabela(motorTable, motorTableSize, sub)) {
+            printPrompt();
+            return;
+        }
+    }
+
+    if (up.startsWith("SENSOR ")) {
+        String sub = linha.substring(7);
+        sub.trim();
+        if (sub.length() > 0 && executarComandoDaTabela(sensorTable, sensorTableSize, sub)) {
+            printPrompt();
+            return;
+        }
+    }
+
+    if (up.startsWith("SYSTEM ")) {
+        if (executarComandoDaTabela(mainTable, mainTableSize, linha)) {
+            printPrompt();
+            return;
+        }
+    }
+
+    bool executado = false;
+
     switch (state) {
         case STATE_MAIN:
-            if (!executarComandoDaTabela(mainTable, mainTableSize, linha)) {
-                console_println("Comando não reconhecido. Digite HELP.");
-            }
+            executado = executarComandoDaTabela(mainTable, mainTableSize, linha);
             break;
         case STATE_MOTOR:
-            if (!executarComandoDaTabela(motorTable, motorTableSize, linha)) {
-                console_println("Comando MOTOR não reconhecido. Digite HELP.");
-            }
+            executado = executarComandoDaTabela(motorTable, motorTableSize, linha);
             break;
         case STATE_SENSOR:
-            if (!executarComandoDaTabela(sensorTable, sensorTableSize, linha)) {
-                console_println("Comando SENSOR não reconhecido. Digite HELP.");
-            }
+            executado = executarComandoDaTabela(sensorTable, sensorTableSize, linha);
             break;
+    }
+
+    // Fallback global: se não reconhecer no estado atual, tenta nas outras tabelas.
+    if (!executado) {
+        executado = executarComandoDaTabela(mainTable, mainTableSize, linha)
+            || executarComandoDaTabela(motorTable, motorTableSize, linha)
+            || executarComandoDaTabela(sensorTable, sensorTableSize, linha);
+    }
+
+    if (!executado) {
+        console_println("Comando não reconhecido. Digite HELP.");
     }
 
     printPrompt();

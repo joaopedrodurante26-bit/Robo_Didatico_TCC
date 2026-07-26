@@ -26,8 +26,8 @@ void initLogger() {
 // =========================
 
 void escrever(String nivel, String msg) {
-
-    String linha = "[" + nivel + "] " + msg;
+    String ts = String(millis() / 1000.0f, 3);
+    String linha = "[" + ts + "] [" + nivel + "] " + msg;
 
     // Serial
     Serial.println(linha);
@@ -43,6 +43,10 @@ void escrever(String nivel, String msg) {
 // NÍVEIS
 // =========================
 
+void logDebug(String msg) {
+    escrever("DEBUG", msg);
+}
+
 void logInfo(String msg) {
     escrever("INFO", msg);
 }
@@ -53,4 +57,8 @@ void logWarn(String msg) {
 
 void logError(String msg) {
     escrever("ERROR", msg);
+}
+
+void logFatal(String msg) {
+    escrever("FATAL", msg);
 }

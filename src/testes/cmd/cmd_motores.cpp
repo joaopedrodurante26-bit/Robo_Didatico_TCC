@@ -130,11 +130,17 @@ static void cmd_motor_help(String args) { console_println("Comandos Motores: F T
 
 static Command comandosMotor[] = {
     {"F", cmd_motor_f, "Move ambos para frente"},
+    {"FORWARD", cmd_motor_f, "Move ambos para frente (alias)"},
     {"T", cmd_motor_t, "Move ambos para trás"},
+    {"BACKWARD", cmd_motor_t, "Move ambos para trás (alias)"},
     {"VE", cmd_motor_ve, "Vira à esquerda"},
+    {"TURN LEFT", cmd_motor_ve, "Vira à esquerda (alias)"},
     {"VD", cmd_motor_vd, "Vira à direita"},
+    {"TURN RIGHT", cmd_motor_vd, "Vira à direita (alias)"},
     {"E", cmd_motor_e, "Controla lado esquerdo"},
+    {"LEFT", cmd_motor_e, "Controla lado esquerdo (alias)"},
     {"D", cmd_motor_d, "Controla lado direito"},
+    {"RIGHT", cmd_motor_d, "Controla lado direito (alias)"},
     {"STOP", cmd_motor_stop, "Interrompe motores"},
     {"EXIT", cmd_motor_exit, "Volta ao menu principal"},
     {"HELP", cmd_motor_help, "Ajuda do menu motores"},

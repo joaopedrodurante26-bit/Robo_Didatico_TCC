@@ -210,7 +210,7 @@ static void configurarRotas() {
     server.on("/status", []() {
         RobotState st = getRobotStateSnapshot();
         String estado = "Aguardando";
-        float distancia = st.distanciaCm;
+        float distancia = st.distance;
 
         if (distancia < 20.0f) {
             estado = "Obstáculo";
@@ -224,12 +224,15 @@ static void configurarRotas() {
 
         String json = "{";
         json += "\"distancia\": " + String((int)distancia) + ",";
+        json += "\"distance\": " + String(distancia, 2) + ",";
         json += "\"estado\": \"" + estado + "\",";
         json += "\"modo\": \"" + String(robotModeToString(st.mode)) + "\",";
         json += "\"ui\": \"" + String(interfaceModeToString(st.interfaceMode)) + "\",";
         json += "\"wifi\": \"" + String(ssid) + "\",";
         json += "\"encoder_esq\": " + String(st.encoderEsq) + ",";
         json += "\"encoder_dir\": " + String(st.encoderDir) + ",";
+        json += "\"encoderLeft\": " + String(st.encoderLeft) + ",";
+        json += "\"encoderRight\": " + String(st.encoderRight) + ",";
         json += "\"accel\": {";
         json += "\"x\": " + String(st.accelX, 3) + ",";
         json += "\"y\": " + String(st.accelY, 3) + ",";
@@ -240,6 +243,16 @@ static void configurarRotas() {
         json += "\"y\": " + String(st.gyroY, 3) + ",";
         json += "\"z\": " + String(st.gyroZ, 3);
         json += "},";
+        json += "\"accelX\": " + String(st.accel[0], 3) + ",";
+        json += "\"accelY\": " + String(st.accel[1], 3) + ",";
+        json += "\"accelZ\": " + String(st.accel[2], 3) + ",";
+        json += "\"gyroX\": " + String(st.gyro[0], 3) + ",";
+        json += "\"gyroY\": " + String(st.gyro[1], 3) + ",";
+        json += "\"gyroZ\": " + String(st.gyro[2], 3) + ",";
+        json += "\"pwmLeft\": " + String(st.pwmLeft) + ",";
+        json += "\"pwmRight\": " + String(st.pwmRight) + ",";
+        json += "\"wifiConnected\": " + String(st.wifiConnected ? "true" : "false") + ",";
+        json += "\"uptime\": " + String(st.uptime) + ",";
         json += "\"vel_esq\": " + String(st.velEsqCmd) + ",";
         json += "\"vel_dir\": " + String(st.velDirCmd) + ",";
         json += "\"uptime_ms\": " + String(st.uptimeMs) + ",";
@@ -247,6 +260,30 @@ static void configurarRotas() {
         json += "\"wifi_ip\": \"" + String(st.wifiIp) + "\"";
         json += "}";
 
+        server.send(200, "application/json", json);
+    });
+
+    server.on("/state", []() {
+        RobotState st = getRobotStateSnapshot();
+        String json = "{";
+        json += "\"mode\": \"" + String(robotModeToString(st.mode)) + "\",";
+        json += "\"interfaceMode\": \"" + String(interfaceModeToString(st.interfaceMode)) + "\",";
+        json += "\"pwmLeft\": " + String(st.pwmLeft) + ",";
+        json += "\"pwmRight\": " + String(st.pwmRight) + ",";
+        json += "\"encoderLeft\": " + String(st.encoderLeft) + ",";
+        json += "\"encoderRight\": " + String(st.encoderRight) + ",";
+        json += "\"distance\": " + String(st.distance, 2) + ",";
+        json += "\"accelX\": " + String(st.accel[0], 3) + ",";
+        json += "\"accelY\": " + String(st.accel[1], 3) + ",";
+        json += "\"accelZ\": " + String(st.accel[2], 3) + ",";
+        json += "\"gyroX\": " + String(st.gyro[0], 3) + ",";
+        json += "\"gyroY\": " + String(st.gyro[1], 3) + ",";
+        json += "\"gyroZ\": " + String(st.gyro[2], 3) + ",";
+        json += "\"wifiConnected\": " + String(st.wifiConnected ? "true" : "false") + ",";
+        json += "\"uptime\": " + String(st.uptime) + ",";
+        json += "\"wifiClients\": " + String(st.wifiClients) + ",";
+        json += "\"wifiIp\": \"" + String(st.wifiIp) + "\"";
+        json += "}";
         server.send(200, "application/json", json);
     });
 }

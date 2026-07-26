@@ -32,6 +32,14 @@
 #include "robot/robot.h"
 #include "testes/testes.h"
 
+static unsigned long lastSensorsMs = 0;
+static unsigned long lastControlMs = 0;
+static unsigned long lastWifiMs = 0;
+
+static const unsigned long SENSOR_PERIOD_MS = 5;   // ~200 Hz
+static const unsigned long CONTROL_PERIOD_MS = 20; // ~50 Hz
+static const unsigned long WIFI_PERIOD_MS = 100;   // ~10 Hz
+
 // =====================================================
 // SETUP
 // =====================================================
@@ -51,13 +59,14 @@ void setup() {
     // Hardware
     initMotores();
     initSensores();
+
+    // Gerenciador central
+    initRobot();
+
     initSensorManager();
 
     // Comunicação
     initWiFi();
-
-    // Gerenciador central
-    initRobot();
 
     // Console administrativo
     testes_iniciar();
@@ -72,6 +81,8 @@ void setup() {
 //
 
 void loop() {
+    unsigned long now = millis();
+
     // -------------------------------------------------
     // ATUALIZAÇÃO DOS MÓDULOS
     // -------------------------------------------------
@@ -86,13 +97,21 @@ void loop() {
     // Interface
     atualizarTestes();
 
-    // Gerenciador central
-    robot_update();
+    if (now - lastSensorsMs >= SENSOR_PERIOD_MS) {
+        lastSensorsMs = now;
+        updateSensorManager();
+    }
 
-    // Hardware
-    updateSensorManager();
-    atualizarMotores();
-    atualizarWiFi();
+    if (now - lastControlMs >= CONTROL_PERIOD_MS) {
+        lastControlMs = now;
+        robot_update();
+        atualizarMotores();
+    }
+
+    if (now - lastWifiMs >= WIFI_PERIOD_MS) {
+        lastWifiMs = now;
+        atualizarWiFi();
+    }
 
 
     // -------------------------------------------------
@@ -101,5 +120,5 @@ void loop() {
     // Pequeno delay para evitar uso excessivo da CPU
     // e manter estabilidade do sistema
     //
-    delay(10);
+    delay(1);
 }

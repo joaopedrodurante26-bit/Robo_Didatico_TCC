@@ -45,11 +45,18 @@ static void cmd_sensor_help(String args) {
 
 static Command comandosSensor[] = {
     {"MPU READ", cmd_sensor_mpu_read, "Leituras IMU"},
+    {"READ MPU", cmd_sensor_mpu_read, "Leituras IMU (alias)"},
     {"MPU STREAM", cmd_sensor_mpu_stream, "Fluxo contínuo IMU"},
+    {"STREAM MPU", cmd_sensor_mpu_stream, "Fluxo contínuo IMU (alias)"},
+    {"STOP MPU", cmd_sensor_stop, "Para stream de MPU"},
     {"ENCODER READ", cmd_sensor_encoder_read, "Pulsos dos encoders"},
+    {"READ ENCODER", cmd_sensor_encoder_read, "Pulsos dos encoders (alias)"},
     {"ENCODER RESET", cmd_sensor_encoder_reset, "Zerar encoders"},
     {"ULTRA READ", cmd_sensor_ultra_read, "Leitura única ultrassônico"},
+    {"READ ULTRA", cmd_sensor_ultra_read, "Leitura única ultrassônico (alias)"},
     {"ULTRA STREAM", cmd_sensor_ultra_stream, "Fluxo contínuo ultrassônico"},
+    {"STREAM ULTRA", cmd_sensor_ultra_stream, "Fluxo contínuo ultrassônico (alias)"},
+    {"STOP ULTRA", cmd_sensor_stop, "Para stream de ultrassônico"},
     {"STOP", cmd_sensor_stop, "Para fluxos"},
     {"EXIT", cmd_sensor_exit, "Volta ao menu principal"},
     {"HELP", cmd_sensor_help, "Ajuda do menu sensores"},
