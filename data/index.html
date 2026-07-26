@@ -1,47 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Robô Vespa</title>
-    <style>
-        body { font-family: Arial; text-align: center; }
-        button {
-            padding: 20px;
-            font-size: 20px;
-            margin: 10px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Console do Robô</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <h1>Controle do Robô</h1>
+  <div class="app">
+    <header>
+      <h1>Robô Vespa</h1>
+      <p>Console web em tempo real</p>
+    </header>
 
-    <h2>Controle</h2>
+    <section class="status-panel">
+      <div class="card">
+        <h2>Modo</h2>
+        <div id="modo">IDLE</div>
+      </div>
+      <div class="card">
+        <h2>Wi-Fi</h2>
+        <div id="wifi">ROBO_VESPA</div>
+      </div>
+      <div class="card">
+        <h2>Distância</h2>
+        <div id="distancia">-- cm</div>
+      </div>
+      <div class="card">
+        <h2>Estado</h2>
+        <div id="estado">Aguardando</div>
+      </div>
+    </section>
 
-    <div id="joystick" style="
-        width: 200px;
-        height: 200px;
-        background: #ccc;
-        border-radius: 50%;
-        position: relative;
-        margin: auto;
-    ">
-        <div id="stick" style="
-            width: 60px;
-            height: 60px;
-            background: #333;
-            border-radius: 50%;
-            position: absolute;
-            top: 70px;
-            left: 70px;
-        "></div>
-    </div>
+    <section class="console-panel">
+      <div class="console-header">
+        <strong>Console</strong>
+        <button id="btnEnviar">Enviar</button>
+      </div>
+      <div id="output" class="output"></div>
+      <div class="input-row">
+        <input id="cmd" type="text" placeholder="Digite um comando (ex: status, mode, motor f)" />
+      </div>
+    </section>
+  </div>
 
-    <h2>Status do Robô</h2>
-
-    <p>Distância: <span id="distancia">--</span> cm</p>
-    <p>Bateria: <span id="bateria">--</span> V</p>
-    <p>Estado: <span id="estado">--</span></p>
-
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

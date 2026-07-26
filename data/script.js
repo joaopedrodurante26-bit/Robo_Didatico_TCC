@@ -1,86 +1,50 @@
-const joystick = document.getElementById("joystick");
-const stick = document.getElementById("stick");
+const output = document.getElementById('output');
+const cmdInput = document.getElementById('cmd');
+const btnEnviar = document.getElementById('btnEnviar');
 
-let active = false;
-
-const max = 80;
-
-joystick.addEventListener("mousedown", (e) => {
-    active = true;
-    mover(e);
-});
-
-document.addEventListener("mousemove", (e) => {
-    if (!active) return;
-    mover(e);
-});
-
-document.addEventListener("mouseup", () => {
-    active = false;
-    resetStick();
-    enviar(0, 0);
-});
-
-joystick.addEventListener("touchstart", (e) => {
-    active = true;
-    mover(e.touches[0]);
-});
-
-joystick.addEventListener("touchmove", (e) => {
-    e.preventDefault();
-    if (!active) return;
-    mover(e.touches[0]);
-}, { passive: false });
-
-joystick.addEventListener("touchend", () => {
-    active = false;
-    resetStick();
-    enviar(0, 0);
-});
-
-function mover(e) {
-    const rect = joystick.getBoundingClientRect();
-
-    let x = e.clientX - rect.left - rect.width / 2;
-    let y = e.clientY - rect.top - rect.height / 2;
-
-    // Limita ao círculo
-    const dist = Math.sqrt(x*x + y*y);
-    if (dist > max) {
-        x = (x / dist) * max;
-        y = (y / dist) * max;
-    }
-
-    // Move o stick visualmente
-    stick.style.left = (x + rect.width / 2 - 30) + "px";
-    stick.style.top  = (y + rect.height / 2 - 30) + "px";
-
-    // Normaliza (-1 a 1)
-    const normX = x / max;
-    const normY = -y / max;
-
-    enviar(normX, normY);
-}
-
-function resetStick() {
-    stick.style.left = "70px";
-    stick.style.top  = "70px";
-}
-
-function enviar(x, y) {
-    fetch(`/controle?x=${x}&y=${y}`);
+function appendLine(text, type = 'info') {
+  const line = document.createElement('div');
+  line.className = `line ${type}`;
+  line.textContent = text;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
 }
 
 function atualizarStatus() {
-    fetch('/status')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('distancia').innerText = data.distancia;
-            document.getElementById('bateria').innerText = data.bateria;
-            document.getElementById('estado').innerText = data.estado;
-        })
-        .catch(err => console.log("Erro:", err));
+  fetch('/status')
+    .then((res) => res.json())
+    .then((data) => {
+      document.getElementById('distancia').textContent = `${data.distancia ?? '--'} cm`;
+      document.getElementById('estado').textContent = data.estado ?? 'Aguardando';
+      document.getElementById('modo').textContent = data.modo ?? 'IDLE';
+      document.getElementById('wifi').textContent = 'ROBO_VESPA';
+    })
+    .catch(() => {
+      document.getElementById('estado').textContent = 'Sem resposta';
+    });
 }
 
-// Atualiza a cada 1 segundo
+function enviarComando() {
+  const cmd = cmdInput.value.trim();
+  if (!cmd) return;
+
+  appendLine(`> ${cmd}`, 'cmd');
+  cmdInput.value = '';
+
+  fetch(`/controle?x=0&y=0`) 
+    .then(() => {
+      appendLine('Comando enviado para o robô.', 'ok');
+    })
+    .catch(() => {
+      appendLine('Falha ao enviar comando.', 'error');
+    });
+}
+
+btnEnviar.addEventListener('click', enviarComando);
+cmdInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') enviarComando();
+});
+
+appendLine('ROBO> Sistema pronto', 'info');
+appendLine('ROBO> Digite um comando para interagir', 'info');
 setInterval(atualizarStatus, 1000);

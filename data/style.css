@@ -1,0 +1,104 @@
+:root {
+  color-scheme: dark;
+  font-family: Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  margin-bottom: 16px;
+}
+
+header h1 {
+  margin: 0 0 4px 0;
+}
+
+header p {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.status-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card, .console-panel {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.card h2 {
+  font-size: 14px;
+  margin: 0 0 8px 0;
+  color: #94a3b8;
+}
+
+.card div {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.console-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.console-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+button {
+  background: #2563eb;
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.output {
+  min-height: 260px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: #020617;
+  border-radius: 8px;
+  padding: 10px;
+  font-family: Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.line { margin-bottom: 4px; }
+.line.cmd { color: #fbbf24; }
+.line.ok { color: #4ade80; }
+.line.error { color: #f87171; }
+.line.info { color: #93c5fd; }
+
+.input-row input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: white;
+}
