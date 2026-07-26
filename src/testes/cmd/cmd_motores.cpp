@@ -2,16 +2,32 @@
 
 #include <Arduino.h>
 #include "../../motores/motores.h"
+#include "../../sensores/sensores.h"
 
 static void executarComMotorTemporizado(void (*acao)(int), int velocidade, int tempoMs) {
+    motores_iniciarComando();
+
     if (tempoMs > 0) {
-        acao(velocidade);
-        delay(tempoMs);
-        pararMotores();
+        unsigned long inicio = millis();
+
+        while (millis() - inicio < (unsigned long)tempoMs) {
+            acao(velocidade);
+            atualizarSensores();
+            atualizarMotores();
+
+            if (motoresSegurancaAtiva()) {
+                break;
+            }
+
+            delay(1);
+        }
+
+        motores_finalizarComando();
         return;
     }
 
     acao(velocidade);
+    motores_finalizarComando();
 }
 
 static void cmd_motor_f(String args) {

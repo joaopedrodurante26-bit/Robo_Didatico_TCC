@@ -26,6 +26,7 @@
 static int velEsqAtual = 0;
 static int velDirAtual = 0;
 static bool segurancaAtiva = false;
+static bool comandoMovimentoAtivo = false;
 
 // =====================================================
 // FUNÇÃO DE SUAVIZAÇÃO (RAMP)
@@ -100,6 +101,10 @@ void initMotores()
 // =====================================================
 
 static void verificarSeguranca() {
+    if (!comandoMovimentoAtivo) {
+        return;
+    }
+
     float distancia = getDistancia();
     bool obstaculo = (distancia > 0.0f && distancia <= 5.0f);
 
@@ -151,6 +156,21 @@ static void aplicarVelocidadeInterna(int velEsq, int velDir, bool usarSuavizacao
         PIN_MOTOR_D_IN1,
         PIN_MOTOR_D_IN2,
         velDirAtual);
+}
+
+bool motoresSegurancaAtiva() {
+    return segurancaAtiva;
+}
+
+void motores_iniciarComando() {
+    comandoMovimentoAtivo = true;
+    segurancaAtiva = false;
+}
+
+void motores_finalizarComando() {
+    comandoMovimentoAtivo = false;
+    segurancaAtiva = false;
+    pararMotores();
 }
 
 void setVelocidade(int velEsq, int velDir)
