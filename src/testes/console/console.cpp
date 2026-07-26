@@ -61,6 +61,18 @@ void console_stopStreams() { mpuStream = false; ultraStream = false; }
 
 void console_printPrompt() { printPrompt(); }
 
+void console_println(const String& line) {
+    Serial.println(line);
+    console_appendWebLine(line);
+}
+
+void console_clear() {
+    for (int i = 0; i < 30; i++) {
+        Serial.println();
+    }
+    webConsoleBuffer = "__CLEAR__\n";
+}
+
 void console_appendWebLine(const String& line) {
     if (line.length() == 0) return;
     webConsoleBuffer += line;
@@ -84,6 +96,10 @@ void console_queueWebCommand(const String& cmd) {
     if (cmd.length() == 0) return;
     webCommandBuffer += cmd;
     webCommandBuffer += "\n";
+}
+
+void console_submitCommand(const String& cmd) {
+    console_queueWebCommand(cmd);
 }
 
 String console_getAndClearWebBuffer() {
@@ -146,31 +162,43 @@ static void printPrompt() {
 }
 
 static void printBootStatus() {
-    Serial.println("=================================================");
-    Serial.println(" ROBÔ EDUCACIONAL");
-    Serial.println(" Console de Diagnóstico e Manutenção");
-    Serial.println(" Firmware 2.0");
-    Serial.println("=================================================");
-    Serial.println();
+    console_println("=================================================");
+    console_println(" ROBÔ EDUCACIONAL");
+    console_println(" Console de Diagnóstico e Manutenção");
+    console_println(" Firmware 2.0");
+    console_println("=================================================");
+    console_println("");
 
-    Serial.println("Inicializando sistema...");
-    Serial.print("[    ] Logger "); Serial.println("[ OK ]");
-    Serial.print("[    ] Motores "); Serial.println("[ OK ]");
-    Serial.print("[    ] Controle "); Serial.println("[ OK ]");
-    Serial.print("[    ] Encoders "); Serial.println("[ OK ]");
+    console_println("Inicializando sistema...");
+    console_println("[    ] Logger [ OK ]");
+    console_println("[    ] Motores [ OK ]");
+    console_println("[    ] Controle [ OK ]");
+    console_println("[    ] Encoders [ OK ]");
 
-    Serial.print("[    ] MPU6050 ");
-    if (getAccelX() == 0 && getAccelY() == 0 && getAccelZ() == 0) Serial.println("[FAIL]"); else Serial.println("[ OK ]");
+    if (getAccelX() == 0 && getAccelY() == 0 && getAccelZ() == 0) {
+        console_println("[    ] MPU6050 [FAIL]");
+    } else {
+        console_println("[    ] MPU6050 [ OK ]");
+    }
 
-    Serial.print("[    ] WiFi "); IPAddress ip = WiFi.softAPIP(); if (ip != IPAddress(0,0,0,0)) Serial.println("[ OK ]"); else Serial.println("[FAIL]");
+    IPAddress ip = WiFi.softAPIP();
+    if (ip != IPAddress(0,0,0,0)) {
+        console_println("[    ] WiFi [ OK ]");
+    } else {
+        console_println("[    ] WiFi [FAIL]");
+    }
 
-    Serial.print("[    ] LittleFS "); if (LittleFS.begin()) Serial.println("[ OK ]"); else Serial.println("[FAIL]");
+    if (LittleFS.begin()) {
+        console_println("[    ] LittleFS [ OK ]");
+    } else {
+        console_println("[    ] LittleFS [FAIL]");
+    }
 
-    Serial.println();
-    Serial.println("Sistema inicializado.");
-    Serial.println();
-    Serial.println("Digite HELP para listar os comandos.");
-    Serial.println();
+    console_println("");
+    console_println("Sistema inicializado.");
+    console_println("");
+    console_println("Digite HELP para listar os comandos.");
+    console_println("");
 }
 
 void console_init() {
@@ -184,24 +212,30 @@ static void executarComando(String cmd) {
     Serial.println();
     console_appendWebLine(cmd);
     String linha = cmd;
+    String up = toUpper(linha);
+
+    // Interrupção global de stream em qualquer estado.
+    if (up == "STOP STREAM" || up == "STREAM STOP") {
+        console_stopStreams();
+        console_println("[OK] STREAM interrompido.");
+        printPrompt();
+        return;
+    }
 
     switch (state) {
         case STATE_MAIN:
             if (!executarComandoDaTabela(mainTable, mainTableSize, linha)) {
-                Serial.println("Comando não reconhecido. Digite HELP.");
-                console_appendWebLine("Comando não reconhecido. Digite HELP.");
+                console_println("Comando não reconhecido. Digite HELP.");
             }
             break;
         case STATE_MOTOR:
             if (!executarComandoDaTabela(motorTable, motorTableSize, linha)) {
-                Serial.println("Comando MOTOR não reconhecido. Digite HELP.");
-                console_appendWebLine("Comando MOTOR não reconhecido. Digite HELP.");
+                console_println("Comando MOTOR não reconhecido. Digite HELP.");
             }
             break;
         case STATE_SENSOR:
             if (!executarComandoDaTabela(sensorTable, sensorTableSize, linha)) {
-                Serial.println("Comando SENSOR não reconhecido. Digite HELP.");
-                console_appendWebLine("Comando SENSOR não reconhecido. Digite HELP.");
+                console_println("Comando SENSOR não reconhecido. Digite HELP.");
             }
             break;
     }
@@ -240,29 +274,19 @@ void console_loop() {
 
     if (mpuStream && millis() - lastStreamMillis > 200) {
         lastStreamMillis = millis();
-        Serial.println("Accel");
-        console_appendWebLine("Accel");
-        Serial.println("X = " + String(getAccelX(), 3) + " g");
-        console_appendWebLine("X = " + String(getAccelX(), 3) + " g");
-        Serial.println("Y = " + String(getAccelY(), 3) + " g");
-        console_appendWebLine("Y = " + String(getAccelY(), 3) + " g");
-        Serial.println("Z = " + String(getAccelZ(), 3) + " g");
-        console_appendWebLine("Z = " + String(getAccelZ(), 3) + " g");
-        Serial.println("Gyro");
-        console_appendWebLine("Gyro");
-        Serial.println("X = " + String(getGyroX(), 3) + " °/s");
-        console_appendWebLine("X = " + String(getGyroX(), 3) + " °/s");
-        Serial.println("Y = " + String(getGyroY(), 3) + " °/s");
-        console_appendWebLine("Y = " + String(getGyroY(), 3) + " °/s");
-        Serial.println("Z = " + String(getGyroZ(), 3) + " °/s");
-        console_appendWebLine("Z = " + String(getGyroZ(), 3) + " °/s");
+        console_println("Accel");
+        console_println("X = " + String(getAccelX(), 3) + " g");
+        console_println("Y = " + String(getAccelY(), 3) + " g");
+        console_println("Z = " + String(getAccelZ(), 3) + " g");
+        console_println("Gyro");
+        console_println("X = " + String(getGyroX(), 3) + " °/s");
+        console_println("Y = " + String(getGyroY(), 3) + " °/s");
+        console_println("Z = " + String(getGyroZ(), 3) + " °/s");
     }
 
     if (ultraStream && millis() - lastStreamMillis > 200) {
         lastStreamMillis = millis();
-        Serial.println("Distância");
-        console_appendWebLine("Distância");
-        Serial.println(String(getDistancia()) + " cm");
-        console_appendWebLine(String(getDistancia()) + " cm");
+        console_println("Distância");
+        console_println(String(getDistancia()) + " cm");
     }
 }

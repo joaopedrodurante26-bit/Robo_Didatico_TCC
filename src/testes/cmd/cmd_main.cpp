@@ -17,6 +17,7 @@ static void cmd_enter_sensor(String args);
 static void cmd_wifi(String args);
 static void cmd_fs(String args);
 static void cmd_diag(String args);
+static void cmd_stop(String args);
 
 static Command comandosMain[] = {
     {"HELP", cmd_help_main, "Mostra ajuda"},
@@ -30,6 +31,7 @@ static Command comandosMain[] = {
     {"WIFI", cmd_wifi, "Informações do WiFi"},
     {"FS", cmd_fs, "Informações do sistema de arquivos"},
     {"DIAG", cmd_diag, "Executa diagnóstico automático"},
+    {"STOP", cmd_stop, "Interrompe streams de sensores"},
 };
 
 Command* getMainCommands(size_t &count) {
@@ -39,32 +41,30 @@ Command* getMainCommands(size_t &count) {
 
 // ---------- implementações ----------
 static void cmd_help_main(String args) {
-    Serial.println("Comandos disponíveis:");
+    console_println("Comandos disponíveis:");
     for (size_t i = 0; i < sizeof(comandosMain)/sizeof(Command); ++i) {
-        Serial.print(comandosMain[i].nome);
-        Serial.print(" - ");
-        Serial.println(comandosMain[i].descricao);
+        console_println(String(comandosMain[i].nome) + " - " + String(comandosMain[i].descricao));
     }
 }
 
 static void cmd_status(String args) {
-    Serial.println("Sistema: OK");
-    Serial.println("Modo atual: " + String(robotModeToString(getCurrentMode())));
-    Serial.println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
+    console_println("Sistema: OK");
+    console_println("Modo atual: " + String(robotModeToString(getCurrentMode())));
+    console_println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
 }
 
 static void cmd_version(String args) {
-    Serial.println("Firmware 2.0");
+    console_println("Firmware 2.0");
 }
 
 static void cmd_reboot(String args) {
-    Serial.println("Reiniciando...");
+    console_println("Reiniciando...");
     delay(200);
     ESP.restart();
 }
 
 static void cmd_clear(String args) {
-    for (int i=0;i<30;i++) Serial.println();
+    console_clear();
 }
 
 static void cmd_mode(String args) {
@@ -73,7 +73,7 @@ static void cmd_mode(String args) {
     entrada.toUpperCase();
 
     if (entrada.length() == 0) {
-        Serial.println("Modo atual: " + String(robotModeToString(getCurrentMode())));
+        console_println("Modo atual: " + String(robotModeToString(getCurrentMode())));
         return;
     }
 
@@ -88,65 +88,73 @@ static void cmd_mode(String args) {
     } else if (entrada == "DIAG" || entrada == "DIAGNOSTIC") {
         setRobotMode(MODE_DIAGNOSTIC);
     } else {
-        Serial.println("Modo inválido. Use IDLE, REMOTE, AUTO, TEST ou DIAG.");
+        console_println("Modo inválido. Use IDLE, REMOTE, AUTO, TEST ou DIAG.");
         return;
     }
 
-    Serial.println("[OK] Comando MODE executado: " + String(robotModeToString(getCurrentMode())));
+    console_println("[OK] Comando MODE executado: " + String(robotModeToString(getCurrentMode())));
 }
 
 static void cmd_enter_motor(String args) {
     console_setState(STATE_MOTOR);
-    Serial.println("Entrando no menu de motores...");
+    console_println("Entrando no menu de motores...");
 }
 
 static void cmd_enter_sensor(String args) {
     console_setState(STATE_SENSOR);
-    Serial.println("Entrando no menu de sensores...");
+    console_println("Entrando no menu de sensores...");
 }
 
 static void cmd_wifi(String args) {
-    Serial.println("WIFI STATUS");
-    Serial.println();
-    Serial.println("SSID");
-    Serial.println(WiFi.softAPgetStationNum() ? String("ROBO_VESPA") : String("ROBO_VESPA"));
-    Serial.println();
-    Serial.println("IP");
-    Serial.println(WiFi.softAPIP().toString());
-    Serial.println();
-    Serial.print("Clientes\n\n");
-    Serial.println(String(WiFi.softAPgetStationNum()) + " conectado(s)");
+    console_println("WIFI STATUS");
+    console_println("");
+    console_println("SSID");
+    console_println(WiFi.softAPgetStationNum() ? String("ROBO_VESPA") : String("ROBO_VESPA"));
+    console_println("");
+    console_println("IP");
+    console_println(WiFi.softAPIP().toString());
+    console_println("");
+    console_println("Clientes");
+    console_println("");
+    console_println(String(WiFi.softAPgetStationNum()) + " conectado(s)");
 }
 
 static void cmd_fs(String args) {
-    Serial.println("FS INFO");
+    console_println("FS INFO");
 
     if (!LittleFS.begin(true)) {
-        Serial.println("LittleFS não montado");
+        console_println("LittleFS não montado");
         return;
     }
 
-    Serial.println("LittleFS\n\nMontado");
-    Serial.println("Arquivos:");
+    console_println("LittleFS");
+    console_println("");
+    console_println("Montado");
+    console_println("Arquivos:");
 
     File root = LittleFS.open("/");
     if (!root || !root.isDirectory()) {
-        Serial.println("(nenhum arquivo encontrado)");
+        console_println("(nenhum arquivo encontrado)");
         return;
     }
 
     File entry = root.openNextFile();
     if (!entry) {
-        Serial.println("(diretório vazio)");
+        console_println("(diretório vazio)");
         return;
     }
 
     do {
-        Serial.println(String(entry.name()));
+        console_println(String(entry.name()));
     } while ((entry = root.openNextFile()));
 }
 
 static void cmd_diag(String args) {
     executarDiagnostico();
-    Serial.println("Diagnóstico concluído.");
+    console_println("Diagnóstico concluído.");
+}
+
+static void cmd_stop(String args) {
+    console_stopStreams();
+    console_println("[OK] STREAM interrompido.");
 }

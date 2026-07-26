@@ -39,6 +39,12 @@ void console_stopStreams();
 // Força reimpressão do prompt (útil após saída das rotinas)
 void console_printPrompt();
 
+// Saída unificada para serial + console web
+void console_println(const String& line);
+
+// Limpa terminal serial e sinaliza limpeza para o console web
+void console_clear();
+
 // Envia uma linha para o console web, se disponível
 void console_appendWebLine(const String& line);
 
@@ -47,6 +53,9 @@ String console_readWebCommand();
 
 // Enfileira um comando vindo da interface web
 void console_queueWebCommand(const String& cmd);
+
+// Submete comando para o interpretador central
+void console_submitCommand(const String& cmd);
 
 // Retorna o conteúdo atual do console web e limpa o buffer
 String console_getAndClearWebBuffer();

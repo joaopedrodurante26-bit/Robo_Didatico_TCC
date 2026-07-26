@@ -40,7 +40,7 @@ static void cmd_motor_f(String args) {
     }
 
     executarComMotorTemporizado(moverFrente, primeira, segunda * 1000);
-    Serial.println("[OK] MOTOR F " + String(primeira) + " " + String(segunda));
+    console_println("[OK] MOTOR F " + String(primeira) + " " + String(segunda));
 }
 
 static void cmd_motor_t(String args) {
@@ -53,7 +53,7 @@ static void cmd_motor_t(String args) {
     }
 
     executarComMotorTemporizado(moverTras, primeira, segunda * 1000);
-    Serial.println("[OK] MOTOR T " + String(primeira) + " " + String(segunda));
+    console_println("[OK] MOTOR T " + String(primeira) + " " + String(segunda));
 }
 
 static void cmd_motor_ve(String args) {
@@ -66,7 +66,7 @@ static void cmd_motor_ve(String args) {
     }
 
     executarComMotorTemporizado(virarEsquerda, primeira, segunda * 1000);
-    Serial.println("[OK] MOTOR VE " + String(primeira) + " " + String(segunda));
+    console_println("[OK] MOTOR VE " + String(primeira) + " " + String(segunda));
 }
 
 static void cmd_motor_vd(String args) {
@@ -79,14 +79,14 @@ static void cmd_motor_vd(String args) {
     }
 
     executarComMotorTemporizado(virarDireita, primeira, segunda * 1000);
-    Serial.println("[OK] MOTOR VD " + String(primeira) + " " + String(segunda));
+    console_println("[OK] MOTOR VD " + String(primeira) + " " + String(segunda));
 }
 
-static void cmd_motor_e(String args) { int v = args.toInt(); setVelocidade(v, 0); Serial.println("[OK] MOTOR E " + String(v)); }
-static void cmd_motor_d(String args) { int v = args.toInt(); setVelocidade(0, v); Serial.println("[OK] MOTOR D " + String(v)); }
-static void cmd_motor_stop(String args) { pararMotores(); Serial.println("[OK] MOTOR STOP"); }
-static void cmd_motor_exit(String args) { pararMotores(); console_setState(STATE_MAIN); Serial.println("[OK] MOTOR EXIT"); }
-static void cmd_motor_help(String args) { Serial.println("Comandos Motores: F T VE VD E D STOP EXIT"); }
+static void cmd_motor_e(String args) { int v = args.toInt(); setVelocidade(v, 0); console_println("[OK] MOTOR E " + String(v)); }
+static void cmd_motor_d(String args) { int v = args.toInt(); setVelocidade(0, v); console_println("[OK] MOTOR D " + String(v)); }
+static void cmd_motor_stop(String args) { pararMotores(); console_println("[OK] MOTOR STOP"); }
+static void cmd_motor_exit(String args) { pararMotores(); console_setState(STATE_MAIN); console_println("[OK] MOTOR EXIT"); }
+static void cmd_motor_help(String args) { console_println("Comandos Motores: F T VE VD E D STOP EXIT"); }
 
 static Command comandosMotor[] = {
     {"F", cmd_motor_f, "Move ambos para frente"},

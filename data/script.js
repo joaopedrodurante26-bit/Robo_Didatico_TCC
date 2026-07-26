@@ -17,8 +17,13 @@ function atualizarConsoleWeb() {
       if (!texto) return;
       const linhas = texto.split('\n');
       linhas.forEach((linha) => {
-        if (linha.trim()) {
-          appendLine(linha, 'info');
+        const normalizada = linha.replace(/\r/g, '').trim();
+        if (normalizada === '__CLEAR__') {
+          output.innerHTML = '';
+          return;
+        }
+        if (normalizada) {
+          appendLine(normalizada, 'info');
         }
       });
     })

@@ -121,7 +121,7 @@ static void configurarRotas() {
             cmd.trim();
 
             if (cmd.length() > 0) {
-                console_queueWebCommand(cmd);
+                console_submitCommand(cmd);
                 Serial.print("[CMD] ");
                 Serial.println(cmd);
             }

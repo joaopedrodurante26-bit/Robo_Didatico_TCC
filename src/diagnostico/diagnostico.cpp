@@ -2,9 +2,11 @@
 #include "../sensores/sensores.h"
 #include <LittleFS.h>
 #include "../utils/logger.h"
+#include "../testes/console/console.h"
 
 void executarDiagnostico() {
     logInfo("Iniciando diagnóstico...");
+    console_println("DIAG: Iniciando diagnóstico...");
 
     String log = "{";
 
@@ -14,8 +16,10 @@ void executarDiagnostico() {
     bool imu_ok = (getAccelX() != 0 || getAccelY() != 0 || getAccelZ() != 0);
     if (imu_ok) {
         logInfo("MPU6050: OK");
+        console_println("DIAG: MPU6050 OK");
     } else {
         logError("MPU6050: FALHA");
+        console_println("DIAG: MPU6050 FALHA");
     }
     log += "\"imu\": " + String(imu_ok ? "true" : "false") + ",";
 
@@ -26,8 +30,10 @@ void executarDiagnostico() {
     bool ultra_ok = (dist > 0);
     if (ultra_ok) {
         logInfo("Sensor Ultrassônico: OK (Distância: " + String(dist) + " cm)");
+        console_println("DIAG: Ultrassonico OK (" + String(dist, 1) + " cm)");
     } else {
         logWarn("Sensor Ultrassônico: FALHA (Distância inválida: " + String(dist) + " cm)");
+        console_println("DIAG: Ultrassonico FALHA");
     }
     log += "\"ultrassonico\": " + String(ultra_ok ? "true" : "false") + ",";
 
@@ -37,8 +43,10 @@ void executarDiagnostico() {
     bool enc_ok = true;
     if (enc_ok) {
         logInfo("Encoders: OK");
+        console_println("DIAG: Encoders OK");
     } else {
         logError("Encoders: FALHA");
+        console_println("DIAG: Encoders FALHA");
     }
     log += "\"encoders\": " + String(enc_ok ? "true" : "false");
 
@@ -52,5 +60,8 @@ void executarDiagnostico() {
     if (file) {
         file.print(log);
         file.close();
+        console_println("DIAG: Resultado salvo em /boot_log.json");
+    } else {
+        console_println("DIAG: Falha ao salvar /boot_log.json");
     }
 }
