@@ -14,6 +14,7 @@
 #include <Wire.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
+#include <math.h>
 
 #include "sensores.h"
 #include "../config/pinos.h"
@@ -32,6 +33,21 @@ static volatile long pulsosDir = 0;
 
 // Ultrassônico
 static float distancia = 0;
+static unsigned long ultraEchoTimeUs = 0;
+static UltrasonicStatus ultraStatus = ULTRA_SENSOR_ERROR;
+static bool ultraTrigOk = false;
+static bool ultraEchoPinOk = false;
+static bool ultraPresente = false;
+static unsigned long ultraReadCount = 0;
+static unsigned long ultraTimeoutCount = 0;
+static uint8_t ultraTimeoutConsecutivo = 0;
+
+static const unsigned long ULTRA_TIMEOUT_US = 30000UL;
+static const uint8_t ULTRA_TIMEOUT_PARA_AUSENCIA = 3;
+static const float ULTRA_MIN_DISTANCE_CM = 2.0f;
+static const float ULTRA_MAX_DISTANCE_CM = 400.0f;
+static const unsigned long ULTRA_MIN_ECHO_US = 115UL;
+static const unsigned long ULTRA_MAX_ECHO_US = 23500UL;
 
 // IMU
 static Adafruit_MPU6050 mpu;
@@ -54,6 +70,96 @@ void IRAM_ATTR contarPulsoDir() {
     pulsosDir++;
 }
 
+static void ultra_initDriver() {
+    pinMode(PIN_TRIG, OUTPUT);
+    pinMode(PIN_ECHO, INPUT);
+    digitalWrite(PIN_TRIG, LOW);
+
+    ultraTrigOk = true;
+    ultraEchoPinOk = true;
+    ultraPresente = false;
+    ultraStatus = ULTRA_SENSOR_ERROR;
+    ultraEchoTimeUs = 0;
+    ultraReadCount = 0;
+    ultraTimeoutCount = 0;
+    ultraTimeoutConsecutivo = 0;
+}
+
+static void ultra_updateDriver() {
+    ultraReadCount++;
+
+    // Rejeita condição elétrica inválida do ECHO travado em HIGH.
+    if (digitalRead(PIN_ECHO) == HIGH) {
+        ultraStatus = ULTRA_SENSOR_ERROR;
+        ultraEchoPinOk = false;
+        distancia = -1.0f;
+        ultraTimeoutConsecutivo = ULTRA_TIMEOUT_PARA_AUSENCIA;
+        ultraPresente = false;
+        return;
+    }
+
+    ultraEchoPinOk = true;
+
+    // Pulso de disparo de 10us para o HC-SR04.
+    digitalWrite(PIN_TRIG, LOW);
+    delayMicroseconds(2);
+    digitalWrite(PIN_TRIG, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(PIN_TRIG, LOW);
+
+    unsigned long duracao = pulseIn(PIN_ECHO, HIGH, ULTRA_TIMEOUT_US);
+    ultraEchoTimeUs = duracao;
+
+    if (duracao == 0) {
+        ultraStatus = ULTRA_TIMEOUT;
+        ultraTimeoutCount++;
+        if (ultraTimeoutConsecutivo < 255) {
+            ultraTimeoutConsecutivo++;
+        }
+        ultraPresente = (ultraTimeoutConsecutivo < ULTRA_TIMEOUT_PARA_AUSENCIA);
+        distancia = -1.0f;
+        return;
+    }
+
+    if (duracao < ULTRA_MIN_ECHO_US) {
+        ultraStatus = ULTRA_ECHO_TOO_SHORT;
+        ultraTimeoutConsecutivo = 0;
+        ultraPresente = true;
+        distancia = -1.0f;
+        return;
+    }
+
+    if (duracao > ULTRA_MAX_ECHO_US) {
+        ultraStatus = ULTRA_ECHO_TOO_LONG;
+        ultraTimeoutConsecutivo = 0;
+        ultraPresente = true;
+        distancia = -1.0f;
+        return;
+    }
+
+    float distanciaCalculada = static_cast<float>(duracao) * 0.0343f / 2.0f;
+    if (!isfinite(distanciaCalculada) || distanciaCalculada <= 0.0f) {
+        ultraStatus = ULTRA_INVALID_READING;
+        ultraTimeoutConsecutivo = 0;
+        ultraPresente = true;
+        distancia = -1.0f;
+        return;
+    }
+
+    if (distanciaCalculada < ULTRA_MIN_DISTANCE_CM || distanciaCalculada > ULTRA_MAX_DISTANCE_CM) {
+        ultraStatus = ULTRA_OUT_OF_RANGE;
+        ultraTimeoutConsecutivo = 0;
+        ultraPresente = true;
+        distancia = distanciaCalculada;
+        return;
+    }
+
+    ultraStatus = ULTRA_OK;
+    ultraTimeoutConsecutivo = 0;
+    ultraPresente = true;
+    distancia = distanciaCalculada;
+}
+
 // =====================================================
 // INICIALIZAÇÃO
 // =====================================================
@@ -72,8 +178,7 @@ void initSensores() {
     // =========================
     // ULTRASSÔNICO
     // =========================
-    pinMode(PIN_TRIG, OUTPUT);
-    pinMode(PIN_ECHO, INPUT);
+    ultra_initDriver();
 
     // =========================
     // IMU (I2C)
@@ -109,20 +214,7 @@ void atualizarSensores() {
     // =========================
     // ULTRASSÔNICO
     // =========================
-    digitalWrite(PIN_TRIG, LOW);
-    delayMicroseconds(2);
-
-    digitalWrite(PIN_TRIG, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(PIN_TRIG, LOW);
-
-    long duracao = pulseIn(PIN_ECHO, HIGH, 20000); // timeout 20ms
-
-    if (duracao == 0) {
-        distancia = -1; // indica erro / fora de alcance
-    } else {
-        distancia = duracao * 0.0343 / 2;
-    }
+    ultra_updateDriver();
 
     // =========================
     // IMU
@@ -166,6 +258,34 @@ long getPulsosDir() {
 
 float getDistancia() {
     return distancia;
+}
+
+unsigned long getUltraEchoTimeUs() {
+    return ultraEchoTimeUs;
+}
+
+UltrasonicStatus getUltraStatus() {
+    return ultraStatus;
+}
+
+bool ultraSensorPresente() {
+    return ultraPresente;
+}
+
+bool ultraTriggerOk() {
+    return ultraTrigOk;
+}
+
+bool ultraEchoOk() {
+    return ultraEchoPinOk;
+}
+
+unsigned long getUltraReadCount() {
+    return ultraReadCount;
+}
+
+unsigned long getUltraTimeoutCount() {
+    return ultraTimeoutCount;
 }
 
 float getAccelX() { return accelX; }

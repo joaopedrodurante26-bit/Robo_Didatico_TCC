@@ -14,7 +14,7 @@
 #include "../config/configuracao.h"
 #include "../controle/controle.h"
 #include "../robot/robot.h"
-#include "../sensores/sensores.h"
+#include "../sensores/sensor_manager.h"
 #include "../testes/console/console.h"
 #include "../utils/logger.h"
 #include "../config/configuracao.h"
@@ -105,8 +105,8 @@ static void verificarSeguranca() {
         return;
     }
 
-    float distancia = getDistancia();
-    bool obstaculo = (distancia > 0.0f && distancia <= 5.0f);
+    float distancia = getUltraDistanceCm();
+    bool obstaculo = (isUltraDistanceValid() && distancia <= 5.0f);
 
     if (obstaculo) {
         if (!segurancaAtiva) {

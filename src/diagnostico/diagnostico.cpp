@@ -1,5 +1,6 @@
 #include "diagnostico.h"
 #include "../sensores/sensores.h"
+#include "../sensores/sensor_manager.h"
 #include <LittleFS.h>
 #include "../utils/logger.h"
 #include "../testes/console/console.h"
@@ -26,8 +27,8 @@ void executarDiagnostico() {
     // =========================
     // Ultrassônico
     // =========================
-    float dist = getDistancia();
-    bool ultra_ok = (dist > 0);
+    float dist = getUltraDistanceCm();
+    bool ultra_ok = (getUltraStatus() == ULTRA_OK);
     if (ultra_ok) {
         logInfo("Sensor Ultrassônico: OK (Distância: " + String(dist) + " cm)");
         console_println("DIAG: Ultrassonico OK (" + String(dist, 1) + " cm)");

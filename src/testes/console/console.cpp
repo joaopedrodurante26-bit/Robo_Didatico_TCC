@@ -6,6 +6,7 @@
 #include <WiFi.h>
 
 #include "../../sensores/sensores.h"
+#include "../../sensores/sensor_manager.h"
 #include "../../utils/logger.h"
 
 // Tabelas registradas
@@ -321,6 +322,10 @@ void console_loop() {
     if (ultraStream && millis() - lastStreamMillis > 200) {
         lastStreamMillis = millis();
         console_println("Distância");
-        console_println(String(getDistancia()) + " cm");
+        if (isUltraDistanceValid()) {
+            console_println(String(getUltraDistanceCm(), 1) + " cm");
+        } else {
+            console_println("N/A");
+        }
     }
 }

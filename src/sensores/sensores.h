@@ -19,6 +19,16 @@
 
 #include <Arduino.h>
 
+enum UltrasonicStatus {
+	ULTRA_OK = 0,
+	ULTRA_TIMEOUT,
+	ULTRA_ECHO_TOO_SHORT,
+	ULTRA_ECHO_TOO_LONG,
+	ULTRA_OUT_OF_RANGE,
+	ULTRA_INVALID_READING,
+	ULTRA_SENSOR_ERROR
+};
+
 // =====================================================
 // INICIALIZAÇÃO E ATUALIZAÇÃO
 // =====================================================
@@ -74,6 +84,23 @@ void resetEncoders();
 //
 
 float getDistancia();
+
+// Leitura crua em microssegundos da última amostra válida.
+unsigned long getUltraEchoTimeUs();
+
+// Estado do último ciclo de leitura do HC-SR04.
+UltrasonicStatus getUltraStatus();
+
+// Sinaliza presença provável do sensor com base nas últimas leituras.
+bool ultraSensorPresente();
+
+// Diagnóstico básico de pinos e leitura.
+bool ultraTriggerOk();
+bool ultraEchoOk();
+
+// Estatísticas para diagnóstico.
+unsigned long getUltraReadCount();
+unsigned long getUltraTimeoutCount();
 
 // =====================================================
 // IMU (ACELERÔMETRO + GIROSCÓPIO)
