@@ -209,7 +209,7 @@ void pararMotores() {
 void atualizarMotores() {
     RobotMode modo = getCurrentMode();
 
-    if (modo == MODE_REMOTE || modo == MODE_AUTONOMOUS) {
+    if (modo == MODE_MANUAL || modo == MODE_AUTONOMOUS) {
         aplicarVelocidadeInterna(getVelEsq(), getVelDir(), true);
     }
 }

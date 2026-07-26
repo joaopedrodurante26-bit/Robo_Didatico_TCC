@@ -8,9 +8,11 @@
 #include "utils/logger.h"
 
 static RobotMode currentMode = MODE_IDLE;
+static InterfaceMode currentInterfaceMode = UI_CONSOLE;
 
 void initRobot() {
     currentMode = MODE_IDLE;
+    currentInterfaceMode = UI_CONSOLE;
     initControle();
 }
 
@@ -25,11 +27,28 @@ RobotMode getCurrentMode() {
 const char* robotModeToString(RobotMode mode) {
     switch (mode) {
         case MODE_IDLE: return "MODE_IDLE";
-        case MODE_REMOTE: return "MODE_REMOTE";
+        case MODE_MANUAL: return "MODE_MANUAL";
         case MODE_AUTONOMOUS: return "MODE_AUTONOMOUS";
-        case MODE_TEST: return "MODE_TEST";
-        case MODE_DIAGNOSTIC: return "MODE_DIAGNOSTIC";
+        case MODE_CALIBRATION: return "MODE_CALIBRATION";
         default: return "MODE_UNKNOWN";
+    }
+}
+
+void setInterfaceMode(InterfaceMode mode) {
+    currentInterfaceMode = mode;
+}
+
+InterfaceMode getInterfaceMode() {
+    return currentInterfaceMode;
+}
+
+const char* interfaceModeToString(InterfaceMode mode) {
+    switch (mode) {
+        case UI_CONSOLE: return "UI_CONSOLE";
+        case UI_CONTROL: return "UI_CONTROL";
+        case UI_MONITOR: return "UI_MONITOR";
+        case UI_CONFIGURATION: return "UI_CONFIGURATION";
+        default: return "UI_UNKNOWN";
     }
 }
 
@@ -38,15 +57,13 @@ void robot_update() {
         case MODE_IDLE:
             pararMotores();
             break;
-        case MODE_REMOTE:
+        case MODE_MANUAL:
             atualizarControle();
             break;
         case MODE_AUTONOMOUS:
             atualizarControle();
             break;
-        case MODE_TEST:
-            break;
-        case MODE_DIAGNOSTIC:
+        case MODE_CALIBRATION:
             break;
     }
 }

@@ -82,10 +82,41 @@ static void configurarRotas() {
     // -------------------------------------------------
     server.on("/", []() {
         logInfo("[HTTP] Cliente acessou /");
+        setInterfaceMode(UI_CONSOLE);
         enviarArquivoOuFallback(
             "/index.html",
             "text/html",
             "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Robo Vespa</title><style>body{font-family:Arial,sans-serif;background:#111;color:#fff;padding:24px}h1{margin-bottom:8px}p{color:#ccc}</style></head><body><h1>Robô Vespa</h1><p>Interface web pronta no firmware.</p></body></html>"
+        );
+    });
+
+    server.on("/control", []() {
+        logInfo("[HTTP] Cliente acessou /control");
+        setInterfaceMode(UI_CONTROL);
+        enviarArquivoOuFallback(
+            "/control.html",
+            "text/html",
+            "<!DOCTYPE html><html><body><h1>Control</h1><p>control.html não encontrado.</p></body></html>"
+        );
+    });
+
+    server.on("/monitor", []() {
+        logInfo("[HTTP] Cliente acessou /monitor");
+        setInterfaceMode(UI_MONITOR);
+        enviarArquivoOuFallback(
+            "/monitor.html",
+            "text/html",
+            "<!DOCTYPE html><html><body><h1>Monitor</h1><p>monitor.html não encontrado.</p></body></html>"
+        );
+    });
+
+    server.on("/config", []() {
+        logInfo("[HTTP] Cliente acessou /config");
+        setInterfaceMode(UI_CONFIGURATION);
+        enviarArquivoOuFallback(
+            "/config.html",
+            "text/html",
+            "<!DOCTYPE html><html><body><h1>Config</h1><p>config.html não encontrado.</p></body></html>"
         );
     });
 
@@ -97,6 +128,30 @@ static void configurarRotas() {
             "/script.js",
             "application/javascript",
             "console.log('Script fallback carregado');"
+        );
+    });
+
+    server.on("/control.js", []() {
+        enviarArquivoOuFallback(
+            "/control.js",
+            "application/javascript",
+            "console.log('control.js não encontrado');"
+        );
+    });
+
+    server.on("/monitor.js", []() {
+        enviarArquivoOuFallback(
+            "/monitor.js",
+            "application/javascript",
+            "console.log('monitor.js não encontrado');"
+        );
+    });
+
+    server.on("/config.js", []() {
+        enviarArquivoOuFallback(
+            "/config.js",
+            "application/javascript",
+            "console.log('config.js não encontrado');"
         );
     });
 
@@ -157,20 +212,19 @@ static void configurarRotas() {
 
         if (distancia < 20.0f) {
             estado = "Obstáculo";
-        } else if (getCurrentMode() == MODE_REMOTE) {
-            estado = "Remote";
+        } else if (getCurrentMode() == MODE_MANUAL) {
+            estado = "Manual";
         } else if (getCurrentMode() == MODE_AUTONOMOUS) {
             estado = "Autônomo";
-        } else if (getCurrentMode() == MODE_TEST) {
-            estado = "Teste";
-        } else if (getCurrentMode() == MODE_DIAGNOSTIC) {
-            estado = "Diagnóstico";
+        } else if (getCurrentMode() == MODE_CALIBRATION) {
+            estado = "Calibração";
         }
 
         String json = "{";
         json += "\"distancia\": " + String((int)distancia) + ",";
         json += "\"estado\": \"" + estado + "\",";
         json += "\"modo\": \"" + String(robotModeToString(getCurrentMode())) + "\",";
+        json += "\"ui\": \"" + String(interfaceModeToString(getInterfaceMode())) + "\",";
         json += "\"wifi\": \"" + String(ssid) + "\",";
         json += "\"encoder_esq\": " + String(getPulsosEsq()) + ",";
         json += "\"encoder_dir\": " + String(getPulsosDir()) + ",";

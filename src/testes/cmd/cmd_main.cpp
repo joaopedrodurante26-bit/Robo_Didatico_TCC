@@ -18,6 +18,7 @@ static void cmd_wifi(String args);
 static void cmd_fs(String args);
 static void cmd_diag(String args);
 static void cmd_stop(String args);
+static void cmd_ui(String args);
 
 static Command comandosMain[] = {
     {"HELP", cmd_help_main, "Mostra ajuda"},
@@ -32,6 +33,7 @@ static Command comandosMain[] = {
     {"FS", cmd_fs, "Informações do sistema de arquivos"},
     {"DIAG", cmd_diag, "Executa diagnóstico automático"},
     {"STOP", cmd_stop, "Interrompe streams de sensores"},
+    {"UI", cmd_ui, "Mostra/altera interface: CONSOLE, CONTROL, MONITOR, CONFIG"},
 };
 
 Command* getMainCommands(size_t &count) {
@@ -50,6 +52,7 @@ static void cmd_help_main(String args) {
 static void cmd_status(String args) {
     console_println("Sistema: OK");
     console_println("Modo atual: " + String(robotModeToString(getCurrentMode())));
+    console_println("Interface atual: " + String(interfaceModeToString(getInterfaceMode())));
     console_println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
 }
 
@@ -79,16 +82,19 @@ static void cmd_mode(String args) {
 
     if (entrada == "IDLE") {
         setRobotMode(MODE_IDLE);
-    } else if (entrada == "REMOTE") {
-        setRobotMode(MODE_REMOTE);
+    } else if (entrada == "REMOTE" || entrada == "MANUAL") {
+        setRobotMode(MODE_MANUAL);
     } else if (entrada == "AUTO" || entrada == "AUTONOMOUS") {
         setRobotMode(MODE_AUTONOMOUS);
+    } else if (entrada == "CAL" || entrada == "CALIBRATION") {
+        setRobotMode(MODE_CALIBRATION);
     } else if (entrada == "TEST") {
-        setRobotMode(MODE_TEST);
+        setRobotMode(MODE_CALIBRATION);
     } else if (entrada == "DIAG" || entrada == "DIAGNOSTIC") {
-        setRobotMode(MODE_DIAGNOSTIC);
+        console_println("MODE DIAG foi descontinuado. Use o comando DIAG.");
+        return;
     } else {
-        console_println("Modo inválido. Use IDLE, REMOTE, AUTO, TEST ou DIAG.");
+        console_println("Modo inválido. Use IDLE, MANUAL, AUTO ou CAL.");
         return;
     }
 
@@ -157,4 +163,30 @@ static void cmd_diag(String args) {
 static void cmd_stop(String args) {
     console_stopStreams();
     console_println("[OK] STREAM interrompido.");
+}
+
+static void cmd_ui(String args) {
+    String entrada = args;
+    entrada.trim();
+    entrada.toUpperCase();
+
+    if (entrada.length() == 0) {
+        console_println("Interface atual: " + String(interfaceModeToString(getInterfaceMode())));
+        return;
+    }
+
+    if (entrada == "CONSOLE") {
+        setInterfaceMode(UI_CONSOLE);
+    } else if (entrada == "CONTROL") {
+        setInterfaceMode(UI_CONTROL);
+    } else if (entrada == "MONITOR") {
+        setInterfaceMode(UI_MONITOR);
+    } else if (entrada == "CONFIG" || entrada == "CONFIGURATION") {
+        setInterfaceMode(UI_CONFIGURATION);
+    } else {
+        console_println("UI inválida. Use CONSOLE, CONTROL, MONITOR ou CONFIG.");
+        return;
+    }
+
+    console_println("[OK] Interface selecionada: " + String(interfaceModeToString(getInterfaceMode())));
 }

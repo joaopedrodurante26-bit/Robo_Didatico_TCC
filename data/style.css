@@ -30,6 +30,29 @@ header p {
   color: #94a3b8;
 }
 
+.top-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.top-nav a {
+  text-decoration: none;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+  background: #111827;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.top-nav a.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
 .status-panel {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -101,4 +124,52 @@ button {
   border: 1px solid #475569;
   background: #0f172a;
   color: white;
+}
+
+.control-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(60px, 1fr));
+  gap: 10px;
+  max-width: 260px;
+}
+
+#btn-front { grid-column: 2; }
+#btn-left { grid-column: 1; }
+#btn-stop { grid-column: 2; }
+#btn-right { grid-column: 3; }
+#btn-back { grid-column: 2; }
+
+.danger {
+  background: #dc2626;
+}
+
+#speed {
+  width: 100%;
+}
+
+#speed-value {
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 6px;
+}
+
+.hint {
+  margin: 8px 0 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.select-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #ffffff;
 }

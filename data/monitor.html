@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitor do Robô</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Robô Vespa</h1>
+      <p>Painel de instrumentação</p>
+      <nav class="top-nav">
+        <a href="/">Console</a>
+        <a href="/control">Controle</a>
+        <a class="active" href="/monitor">Monitor</a>
+        <a href="/config">Configuração</a>
+      </nav>
+    </header>
+
+    <section class="status-panel">
+      <div class="card"><h2>Modo</h2><div id="modo">--</div></div>
+      <div class="card"><h2>Interface</h2><div id="ui">--</div></div>
+      <div class="card"><h2>Distância</h2><div id="distancia">--</div></div>
+      <div class="card"><h2>Estado</h2><div id="estado">--</div></div>
+      <div class="card"><h2>Encoder Esq</h2><div id="enc-esq">--</div></div>
+      <div class="card"><h2>Encoder Dir</h2><div id="enc-dir">--</div></div>
+    </section>
+
+    <section class="status-panel">
+      <div class="card"><h2>Ax</h2><div id="ax">--</div></div>
+      <div class="card"><h2>Ay</h2><div id="ay">--</div></div>
+      <div class="card"><h2>Az</h2><div id="az">--</div></div>
+      <div class="card"><h2>Gx</h2><div id="gx">--</div></div>
+      <div class="card"><h2>Gy</h2><div id="gy">--</div></div>
+      <div class="card"><h2>Gz</h2><div id="gz">--</div></div>
+    </section>
+  </div>
+
+  <script src="monitor.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuração do Robô</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Robô Vespa</h1>
+      <p>Parâmetros de operação</p>
+      <nav class="top-nav">
+        <a href="/">Console</a>
+        <a href="/control">Controle</a>
+        <a href="/monitor">Monitor</a>
+        <a class="active" href="/config">Configuração</a>
+      </nav>
+    </header>
+
+    <section class="status-panel">
+      <div class="card">
+        <h2>Modo de operação</h2>
+        <select id="mode-select" class="select-input">
+          <option value="MODE IDLE">IDLE</option>
+          <option value="MODE MANUAL">MANUAL</option>
+          <option value="MODE AUTO">AUTONOMOUS</option>
+          <option value="MODE CAL">CALIBRATION</option>
+        </select>
+      </div>
+      <div class="card">
+        <h2>Interface padrão</h2>
+        <select id="ui-select" class="select-input">
+          <option value="UI CONSOLE">CONSOLE</option>
+          <option value="UI CONTROL">CONTROL</option>
+          <option value="UI MONITOR">MONITOR</option>
+          <option value="UI CONFIG">CONFIGURATION</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="console-panel">
+      <div class="console-header">
+        <strong>Ações</strong>
+        <button id="btn-save">Aplicar</button>
+      </div>
+      <div id="cfg-msg" class="output"></div>
+    </section>
+  </div>
+
+  <script src="config.js"></script>
+</body>
+</html>

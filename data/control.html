@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle do Robô</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Robô Vespa</h1>
+      <p>Controle manual</p>
+      <nav class="top-nav">
+        <a href="/">Console</a>
+        <a class="active" href="/control">Controle</a>
+        <a href="/monitor">Monitor</a>
+        <a href="/config">Configuração</a>
+      </nav>
+    </header>
+
+    <section class="control-layout">
+      <div class="card">
+        <h2>Direcional</h2>
+        <div class="dpad">
+          <button id="btn-front">▲</button>
+          <button id="btn-left">◀</button>
+          <button id="btn-stop" class="danger">STOP</button>
+          <button id="btn-right">▶</button>
+          <button id="btn-back">▼</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Velocidade</h2>
+        <input id="speed" type="range" min="80" max="255" value="140" />
+        <div id="speed-value">140</div>
+        <p class="hint">Comandos enviados via interpretador central (MOTOR ...)</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="control.js"></script>
+</body>
+</html>
