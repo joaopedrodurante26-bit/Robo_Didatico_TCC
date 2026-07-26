@@ -4,10 +4,10 @@
 #include "../../motores/motores.h"
 #include "../../sensores/sensores.h"
 
-static void executarComMotorTemporizado(void (*acao)(int), int velocidade, int tempoMs) {
+static void executarComMotor(void (*acao)(int), int velocidade, bool usarTempo, int tempoMs) {
     motores_iniciarComando();
 
-    if (tempoMs > 0) {
+    if (usarTempo && tempoMs > 0) {
         unsigned long inicio = millis();
 
         while (millis() - inicio < (unsigned long)tempoMs) {
@@ -26,66 +26,106 @@ static void executarComMotorTemporizado(void (*acao)(int), int velocidade, int t
         return;
     }
 
+    // Sem tempo: mantém movimento até novo comando (ex.: STOP).
     acao(velocidade);
-    motores_finalizarComando();
 }
 
 static void cmd_motor_f(String args) {
     int primeira = args.toInt();
     int segunda = 0;
+    bool temTempo = false;
     int espaco = args.indexOf(' ');
 
     if (espaco != -1) {
-        segunda = args.substring(espaco + 1).toInt();
+        String resto = args.substring(espaco + 1);
+        resto.trim();
+        if (resto.length() > 0) {
+            temTempo = true;
+            segunda = resto.toInt();
+        }
     }
 
-    executarComMotorTemporizado(moverFrente, primeira, segunda * 1000);
-    console_println("[OK] MOTOR F " + String(primeira) + " " + String(segunda));
+    executarComMotor(moverFrente, primeira, temTempo, segunda * 1000);
+    if (temTempo) {
+        console_println("[OK] MOTOR F " + String(primeira) + " " + String(segunda));
+    } else {
+        console_println("[OK] MOTOR F " + String(primeira));
+    }
 }
 
 static void cmd_motor_t(String args) {
     int primeira = args.toInt();
     int segunda = 0;
+    bool temTempo = false;
     int espaco = args.indexOf(' ');
 
     if (espaco != -1) {
-        segunda = args.substring(espaco + 1).toInt();
+        String resto = args.substring(espaco + 1);
+        resto.trim();
+        if (resto.length() > 0) {
+            temTempo = true;
+            segunda = resto.toInt();
+        }
     }
 
-    executarComMotorTemporizado(moverTras, primeira, segunda * 1000);
-    console_println("[OK] MOTOR T " + String(primeira) + " " + String(segunda));
+    executarComMotor(moverTras, primeira, temTempo, segunda * 1000);
+    if (temTempo) {
+        console_println("[OK] MOTOR T " + String(primeira) + " " + String(segunda));
+    } else {
+        console_println("[OK] MOTOR T " + String(primeira));
+    }
 }
 
 static void cmd_motor_ve(String args) {
     int primeira = args.toInt();
     int segunda = 0;
+    bool temTempo = false;
     int espaco = args.indexOf(' ');
 
     if (espaco != -1) {
-        segunda = args.substring(espaco + 1).toInt();
+        String resto = args.substring(espaco + 1);
+        resto.trim();
+        if (resto.length() > 0) {
+            temTempo = true;
+            segunda = resto.toInt();
+        }
     }
 
-    executarComMotorTemporizado(virarEsquerda, primeira, segunda * 1000);
-    console_println("[OK] MOTOR VE " + String(primeira) + " " + String(segunda));
+    executarComMotor(virarEsquerda, primeira, temTempo, segunda * 1000);
+    if (temTempo) {
+        console_println("[OK] MOTOR VE " + String(primeira) + " " + String(segunda));
+    } else {
+        console_println("[OK] MOTOR VE " + String(primeira));
+    }
 }
 
 static void cmd_motor_vd(String args) {
     int primeira = args.toInt();
     int segunda = 0;
+    bool temTempo = false;
     int espaco = args.indexOf(' ');
 
     if (espaco != -1) {
-        segunda = args.substring(espaco + 1).toInt();
+        String resto = args.substring(espaco + 1);
+        resto.trim();
+        if (resto.length() > 0) {
+            temTempo = true;
+            segunda = resto.toInt();
+        }
     }
 
-    executarComMotorTemporizado(virarDireita, primeira, segunda * 1000);
-    console_println("[OK] MOTOR VD " + String(primeira) + " " + String(segunda));
+    executarComMotor(virarDireita, primeira, temTempo, segunda * 1000);
+    if (temTempo) {
+        console_println("[OK] MOTOR VD " + String(primeira) + " " + String(segunda));
+    } else {
+        console_println("[OK] MOTOR VD " + String(primeira));
+    }
 }
 
 static void cmd_motor_e(String args) { int v = args.toInt(); setVelocidade(v, 0); console_println("[OK] MOTOR E " + String(v)); }
 static void cmd_motor_d(String args) { int v = args.toInt(); setVelocidade(0, v); console_println("[OK] MOTOR D " + String(v)); }
-static void cmd_motor_stop(String args) { pararMotores(); console_println("[OK] MOTOR STOP"); }
-static void cmd_motor_exit(String args) { pararMotores(); console_setState(STATE_MAIN); console_println("[OK] MOTOR EXIT"); }
+static void cmd_motor_stop(String args) { motores_finalizarComando(); console_println("[OK] MOTOR STOP"); }
+static void cmd_motor_exit(String args) { motores_finalizarComando(); console_setState(STATE_MAIN); console_println("[OK] MOTOR EXIT"); }
 static void cmd_motor_help(String args) { console_println("Comandos Motores: F T VE VD E D STOP EXIT"); }
 
 static Command comandosMotor[] = {
