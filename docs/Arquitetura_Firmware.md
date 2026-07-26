@@ -10,9 +10,14 @@ flowchart TD
     CC --> CP[Command Processor]
     CP --> RB[Robot / RobotMode]
 
-    RB --> M[Motores]
+    RB --> RA[Robot API]
+    RA --> M[Motores]
     RB --> SM[SensorManager]
     RB --> WF[WiFi Manager]
+    RC[RobotConfig] --> RB
+    RC --> RA
+    RC --> WF
+    RC --> SM
 
     SM --> S[Sensores Físicos]
     SM --> RS[RobotState]
@@ -24,8 +29,20 @@ flowchart TD
 - As interfaces (Web e Serial) apenas transportam comandos e exibem respostas.
 - O processamento de comandos é centralizado no Console Core.
 - O `Robot` define comportamento (`RobotMode`) e interface ativa (`InterfaceMode`).
+- A `Robot API` é a fronteira entre decisão e execução física (motores/drivers).
 - O `SensorManager` encapsula aquisição de sensores e alimenta o `RobotState`.
 - O `RobotState` é a fonte única de estado para APIs e telas.
+- O `RobotConfig` centraliza parâmetros persistentes (carregados do LittleFS).
+
+### Regra de Governança do RobotState
+
+O `RobotState` deve ser tratado como **somente leitura** para módulos consumidores.
+
+Regra arquitetural:
+
+> Cada módulo é responsável por atualizar apenas a parcela do estado que lhe pertence. Os demais componentes apenas consultam o `RobotState`.
+
+Isso evita inconsistência por escrita cruzada e mantém rastreabilidade da origem de cada dado.
 
 ## 2. Fluxo de Comando (Web/Serial)
 
@@ -36,8 +53,9 @@ flowchart TD
 
     C --> P[Parser + Dispatcher]
     P --> T[Command Tables: Main/Motor/Sensor]
-    T --> R[Robot API / Módulos]
-    R --> MT[Motores]
+    T --> R[Robot / Regras de Operação]
+    R --> A[Robot API]
+    A --> MT[Motores]
 ```
 
 ### Observações
@@ -62,6 +80,30 @@ flowchart TD
 - Módulos acima do `SensorManager` não dependem do hardware específico.
 - `RobotState` oferece snapshot consolidado para monitoramento e decisões.
 
+### Evolução Prevista do SensorManager
+
+```mermaid
+flowchart TD
+    MPU2[MPU6050]
+    ENC2[Encoder]
+    ULTRA2[Ultrassônico]
+    FC[Filtro Complementar]
+    KF[Kalman]
+    ODO[Odometria]
+
+    MPU2 --> SM2[SensorManager]
+    ENC2 --> SM2
+    ULTRA2 --> SM2
+    FC --> SM2
+    KF --> SM2
+    ODO --> SM2
+
+    SM2 --> RS2[RobotState]
+    RS2 --> FW2[Restante do Firmware]
+```
+
+Com essa abordagem, o restante do firmware permanece estável mesmo com evolução da pilha de sensores.
+
 ## 4. Scheduler (Loop Principal)
 
 O loop principal utiliza frequências diferentes por responsabilidade:
@@ -69,7 +111,7 @@ O loop principal utiliza frequências diferentes por responsabilidade:
 - Sensores (`SensorManager`): ~200 Hz (5 ms)
 - Controle + Motores: ~50 Hz (20 ms)
 - WiFi/API Web: ~10 Hz (100 ms)
-- Console: processamento contínuo por iteração
+- Console: orientado a eventos (entrada serial/web)
 
 Isso melhora previsibilidade e reduz acoplamento temporal entre módulos.
 
@@ -97,6 +139,25 @@ Inclui, entre outros:
 - conectividade WiFi
 - uptime
 
+### RobotConfig (parâmetros persistentes)
+Responsável por carregar e distribuir configurações do sistema, por exemplo:
+- PWM máximo e frequência de PWM
+- SSID/senha
+- constantes de PID
+- limites de sensores
+- parâmetros da IMU
+
+Fluxo recomendado:
+
+```mermaid
+flowchart TD
+    FS[LittleFS] --> RC[RobotConfig]
+    RC --> RB[Robot]
+    RC --> RA[Robot API]
+    RC --> WF[WiFi Manager]
+    RC --> SM[SensorManager]
+```
+
 ## 6. Princípios Arquiteturais Atuais
 
 1. Um único núcleo de comandos para todas as interfaces.
@@ -104,6 +165,7 @@ Inclui, entre outros:
 3. Fonte única de estado para observabilidade e integração.
 4. Camada de sensores abstraída para suportar evolução de hardware.
 5. Evolução incremental com compatibilidade de comandos legados.
+6. Governança explícita do estado: escrita por domínio, leitura global.
 
 ## 7. Próximas Evoluções Recomendadas
 
