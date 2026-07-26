@@ -1,4 +1,5 @@
 #include "robot.h"
+#include "robot_state.h"
 
 #include <Arduino.h>
 
@@ -11,13 +12,17 @@ static RobotMode currentMode = MODE_IDLE;
 static InterfaceMode currentInterfaceMode = UI_CONSOLE;
 
 void initRobot() {
+    initRobotState();
     currentMode = MODE_IDLE;
     currentInterfaceMode = UI_CONSOLE;
+    robotStateSetMode(currentMode);
+    robotStateSetInterfaceMode(currentInterfaceMode);
     initControle();
 }
 
 void setRobotMode(RobotMode mode) {
     currentMode = mode;
+    robotStateSetMode(mode);
 }
 
 RobotMode getCurrentMode() {
@@ -36,6 +41,7 @@ const char* robotModeToString(RobotMode mode) {
 
 void setInterfaceMode(InterfaceMode mode) {
     currentInterfaceMode = mode;
+    robotStateSetInterfaceMode(mode);
 }
 
 InterfaceMode getInterfaceMode() {

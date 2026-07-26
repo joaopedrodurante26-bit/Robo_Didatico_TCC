@@ -16,6 +16,7 @@
 #include "motores/motores.h"
 #include "sensores/sensores.h"
 #include "../robot/robot.h"
+#include "../robot/robot_state.h"
 #include "../testes/console/console.h"
 #include "../utils/logger.h"
 
@@ -207,37 +208,43 @@ static void configurarRotas() {
     // ROTA: STATUS DO ROBÔ (API)
     // -------------------------------------------------
     server.on("/status", []() {
+        RobotState st = getRobotStateSnapshot();
         String estado = "Aguardando";
-        float distancia = getDistancia();
+        float distancia = st.distanciaCm;
 
         if (distancia < 20.0f) {
             estado = "Obstáculo";
-        } else if (getCurrentMode() == MODE_MANUAL) {
+        } else if (st.mode == MODE_MANUAL) {
             estado = "Manual";
-        } else if (getCurrentMode() == MODE_AUTONOMOUS) {
+        } else if (st.mode == MODE_AUTONOMOUS) {
             estado = "Autônomo";
-        } else if (getCurrentMode() == MODE_CALIBRATION) {
+        } else if (st.mode == MODE_CALIBRATION) {
             estado = "Calibração";
         }
 
         String json = "{";
         json += "\"distancia\": " + String((int)distancia) + ",";
         json += "\"estado\": \"" + estado + "\",";
-        json += "\"modo\": \"" + String(robotModeToString(getCurrentMode())) + "\",";
-        json += "\"ui\": \"" + String(interfaceModeToString(getInterfaceMode())) + "\",";
+        json += "\"modo\": \"" + String(robotModeToString(st.mode)) + "\",";
+        json += "\"ui\": \"" + String(interfaceModeToString(st.interfaceMode)) + "\",";
         json += "\"wifi\": \"" + String(ssid) + "\",";
-        json += "\"encoder_esq\": " + String(getPulsosEsq()) + ",";
-        json += "\"encoder_dir\": " + String(getPulsosDir()) + ",";
+        json += "\"encoder_esq\": " + String(st.encoderEsq) + ",";
+        json += "\"encoder_dir\": " + String(st.encoderDir) + ",";
         json += "\"accel\": {";
-        json += "\"x\": " + String(getAccelX(), 3) + ",";
-        json += "\"y\": " + String(getAccelY(), 3) + ",";
-        json += "\"z\": " + String(getAccelZ(), 3);
+        json += "\"x\": " + String(st.accelX, 3) + ",";
+        json += "\"y\": " + String(st.accelY, 3) + ",";
+        json += "\"z\": " + String(st.accelZ, 3);
         json += "},";
         json += "\"gyro\": {";
-        json += "\"x\": " + String(getGyroX()) + ",";
-        json += "\"y\": " + String(getGyroY()) + ",";
-        json += "\"z\": " + String(getGyroZ());
-        json += "}";
+        json += "\"x\": " + String(st.gyroX, 3) + ",";
+        json += "\"y\": " + String(st.gyroY, 3) + ",";
+        json += "\"z\": " + String(st.gyroZ, 3);
+        json += "},";
+        json += "\"vel_esq\": " + String(st.velEsqCmd) + ",";
+        json += "\"vel_dir\": " + String(st.velDirCmd) + ",";
+        json += "\"uptime_ms\": " + String(st.uptimeMs) + ",";
+        json += "\"wifi_clients\": " + String(st.wifiClients) + ",";
+        json += "\"wifi_ip\": \"" + String(st.wifiIp) + "\"";
         json += "}";
 
         server.send(200, "application/json", json);
@@ -257,6 +264,7 @@ void initWiFi() {
     // Cria rede
     WiFi.softAP(ssid, password);
     IPAddress IP = WiFi.softAPIP();
+    robotStateSetWifi(IP.toString(), WiFi.softAPgetStationNum());
 
     logInfo("WIFI: Rede criada!");
     logInfo("WIFI: SSID: " + String(ssid));
@@ -287,5 +295,6 @@ void initWiFi() {
 // =====================================================
 
 void atualizarWiFi() {
+    robotStateSetWifi(WiFi.softAPIP().toString(), WiFi.softAPgetStationNum());
     server.handleClient();
 }

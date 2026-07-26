@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include "../../motores/motores.h"
-#include "../../sensores/sensores.h"
+#include "../../sensores/sensor_manager.h"
 
 static void executarComMotor(void (*acao)(int), int velocidade, bool usarTempo, int tempoMs) {
     motores_iniciarComando();
@@ -12,7 +12,7 @@ static void executarComMotor(void (*acao)(int), int velocidade, bool usarTempo, 
 
         while (millis() - inicio < (unsigned long)tempoMs) {
             acao(velocidade);
-            atualizarSensores();
+            updateSensorManager();
             atualizarMotores();
 
             if (motoresSegurancaAtiva()) {

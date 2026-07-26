@@ -25,6 +25,7 @@
 #include "wifi/wifi_manager.h"
 #include "motores/motores.h"
 #include "sensores/sensores.h"
+#include "sensores/sensor_manager.h"
 #include "controle/controle.h"
 #include "utils/logger.h"
 #include "diagnostico/diagnostico.h"
@@ -50,6 +51,7 @@ void setup() {
     // Hardware
     initMotores();
     initSensores();
+    initSensorManager();
 
     // Comunicação
     initWiFi();
@@ -88,7 +90,7 @@ void loop() {
     robot_update();
 
     // Hardware
-    atualizarSensores();
+    updateSensorManager();
     atualizarMotores();
     atualizarWiFi();
 
