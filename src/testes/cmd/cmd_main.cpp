@@ -54,7 +54,7 @@ static void cmd_status(String args) {
 }
 
 static void cmd_version(String args) {
-    Serial.println("Firmware 1.0");
+    Serial.println("Firmware 2.0");
 }
 
 static void cmd_reboot(String args) {
@@ -120,15 +120,30 @@ static void cmd_wifi(String args) {
 
 static void cmd_fs(String args) {
     Serial.println("FS INFO");
-    if (LittleFS.begin()) {
-        Serial.println("LittleFS\n\nMontado");
-        Serial.println("Arquivos:");
-        if (LittleFS.exists("/index.html")) Serial.println("index.html");
-        if (LittleFS.exists("/config.json")) Serial.println("config.json");
-        if (LittleFS.exists("/logo.bmp")) Serial.println("logo.bmp");
-    } else {
+
+    if (!LittleFS.begin(true)) {
         Serial.println("LittleFS não montado");
+        return;
     }
+
+    Serial.println("LittleFS\n\nMontado");
+    Serial.println("Arquivos:");
+
+    File root = LittleFS.open("/");
+    if (!root || !root.isDirectory()) {
+        Serial.println("(nenhum arquivo encontrado)");
+        return;
+    }
+
+    File entry = root.openNextFile();
+    if (!entry) {
+        Serial.println("(diretório vazio)");
+        return;
+    }
+
+    do {
+        Serial.println(String(entry.name()));
+    } while ((entry = root.openNextFile()));
 }
 
 static void cmd_diag(String args) {

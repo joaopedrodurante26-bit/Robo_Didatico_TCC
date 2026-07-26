@@ -22,6 +22,23 @@
 #include <WebServer.h>
 #include <LittleFS.h>
 
+static bool montarLittleFS() {
+    if (LittleFS.begin(true)) {
+        logInfo("WIFI: LittleFS montado com sucesso.");
+        return true;
+    }
+
+    logError("WIFI: Falha ao montar LittleFS. Tentando formatar...");
+
+    if (LittleFS.format()) {
+        logInfo("WIFI: LittleFS formatado com sucesso.");
+        return LittleFS.begin();
+    }
+
+    logError("WIFI: Não foi possível formatar LittleFS.");
+    return false;
+}
+
 // =====================================================
 // CONFIGURAÇÕES DA REDE
 // =====================================================
@@ -164,8 +181,8 @@ void initWiFi() {
     // Inicializa sistema de arquivos
     // -------------------------------------------------
 
-    if (!LittleFS.begin()) {
-        logError("WIFI: Falha ao montar LittleFS");
+    if (!montarLittleFS()) {
+        logError("WIFI: Falha ao inicializar LittleFS");
         return;
     }
 

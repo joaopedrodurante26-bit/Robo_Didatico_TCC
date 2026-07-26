@@ -111,7 +111,7 @@ static void printBootStatus() {
     Serial.println("=================================================");
     Serial.println(" ROBÔ EDUCACIONAL");
     Serial.println(" Console de Diagnóstico e Manutenção");
-    Serial.println(" Firmware 1.0");
+    Serial.println(" Firmware 2.0");
     Serial.println("=================================================");
     Serial.println();
 
