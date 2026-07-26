@@ -3,6 +3,10 @@
 #include "../../sensores/sensores.h"
 #include "../../sensores/sensor_manager.h"
 
+static String formatAgeMs(unsigned long ms) {
+    return String(ms) + " ms";
+}
+
 static const char* ultraStatusToText(UltrasonicStatus status) {
     switch (status) {
         case ULTRA_OK: return "OK";
@@ -42,6 +46,104 @@ static void cmd_sensor_encoder_read(String args) {
 }
 
 static void cmd_sensor_encoder_reset(String args) { resetEncoders(); console_println("Encoders zerados."); }
+
+static void cmd_sensor_ultra_cal(String args) {
+    String entrada = args;
+    entrada.trim();
+
+    if (entrada.length() == 0) {
+        console_println("ULTRA CAL <distancia_cm>");
+        console_println("Use uma distancia conhecida para calcular o fator de calibracao.");
+        console_println("Exemplo: ULTRA CAL 100");
+        return;
+    }
+
+    float knownDistance = entrada.toFloat();
+    if (knownDistance <= 0.0f) {
+        console_println("Distancia invalida. Informe um valor maior que zero.");
+        return;
+    }
+
+    if (calibrateUltraWithKnownDistance(knownDistance)) {
+        console_println("[OK] Calibracao aplicada.");
+        console_println("Fator..............." + String(getUltraCalibrationFactor(), 6));
+        console_println("Distancia conhecida.." + String(knownDistance, 1) + " cm");
+    } else {
+        console_println("Falha ao calibrar. Verifique se existe uma leitura ultrassonica valida.");
+    }
+}
+
+static void cmd_sensor_ultra_info(String args) {
+    UltraStats stats = getUltraStats();
+    unsigned long age = getUltraLastAgeMs();
+
+    console_println("HC-SR04 - INFO");
+    console_println("");
+    console_println("Status.............." + String(ultraStatusToText(getUltraStatus())));
+    console_println("Filtro.............." + String(ultraFilterModeToString(getUltraFilterMode())));
+    console_println("Calibracao.........." + String(getUltraCalibrationFactor(), 6));
+    console_println("Timestamp..........." + String(getUltraLastUpdateMs()) + " ms");
+    console_println("Ultima leitura......" + formatAgeMs(age));
+    console_println("Frequencia.........." + String(getUltraUpdateHz(), 1) + " Hz");
+    console_println("");
+    console_println("Leituras............" + String(stats.reads));
+    console_println("Validas............." + String(stats.validReads));
+    console_println("Timeouts............" + String(stats.timeouts));
+    console_println("Out of Range........" + String(stats.outOfRange));
+    console_println("Echo curto.........." + String(stats.echoShort));
+    console_println("Echo longo.........." + String(stats.echoLong));
+    console_println("Erro..............." + String(stats.sensorError));
+    console_println("Leitura invalida...." + String(stats.invalidRead));
+}
+
+static void cmd_sensor_ultra_filter(String args) {
+    String entrada = args;
+    entrada.trim();
+    entrada.toUpperCase();
+
+    if (entrada.length() == 0) {
+        console_println("ULTRA FILTER <NONE|MEDIAN|MOVING|EXP>");
+        console_println("Filtro atual: " + String(ultraFilterModeToString(getUltraFilterMode())));
+        return;
+    }
+
+    UltraFilterMode mode;
+    if (entrada == "NONE") {
+        mode = ULTRA_FILTER_NONE;
+    } else if (entrada == "MEDIAN") {
+        mode = ULTRA_FILTER_MEDIAN;
+    } else if (entrada == "MOVING") {
+        mode = ULTRA_FILTER_MOVING;
+    } else if (entrada == "EXP") {
+        mode = ULTRA_FILTER_EXP;
+    } else {
+        console_println("Filtro invalido. Use NONE, MEDIAN, MOVING ou EXP.");
+        return;
+    }
+
+    if (setUltraFilterMode(mode)) {
+        console_println("[OK] Filtro aplicado: " + String(ultraFilterModeToString(getUltraFilterMode())));
+    } else {
+        console_println("Falha ao salvar o filtro.");
+    }
+}
+
+static void cmd_sensor_ultra_reset(String args) {
+    resetUltraStats();
+    console_println("[OK] Estatisticas do ultrassonico reiniciadas.");
+}
+
+static void cmd_sensor_ultra_explain(String args) {
+    console_println("HC-SR04");
+    console_println("");
+    console_println("Principio: tempo de voo ultrassonico");
+    console_println("Frequencia: 40 kHz");
+    console_println("Faixa: 2-400 cm");
+    console_println("Resolucao teorica: 3 mm");
+    console_println("Velocidade do som usada: 343 m/s");
+    console_println("Formula: Distancia = Tempo x Velocidade / 2");
+}
+
 static void cmd_sensor_ultra_raw(String args) {
     console_println("HC-SR04");
     console_println("");
@@ -94,7 +196,12 @@ static void cmd_sensor_help(String args) {
     console_println("ULTRA READ - estado + tempo de eco");
     console_println("ULTRA DIST - distancia convertida (cm)");
     console_println("ULTRA RAW - valida trigger/echo + tempo");
-    console_println("ULTRA STATUS - status e estatísticas");
+    console_println("ULTRA STATUS - status e estatísticas básicas");
+    console_println("ULTRA INFO - estatísticas, timestamp, frequencia, filtro e calibracao");
+    console_println("ULTRA FILTER - altera o filtro: NONE, MEDIAN, MOVING, EXP");
+    console_println("ULTRA CAL - calibra com distancia conhecida");
+    console_println("ULTRA RESET - zera estatisticas");
+    console_println("ULTRA EXPLAIN - explica o funcionamento do HC-SR04");
     console_println("ULTRA STREAM - fluxo contínuo");
     console_println("EXIT - voltar ao menu principal");
 }
@@ -108,6 +215,11 @@ static Command comandosSensor[] = {
     {"ENCODER READ", cmd_sensor_encoder_read, "Pulsos dos encoders"},
     {"READ ENCODER", cmd_sensor_encoder_read, "Pulsos dos encoders (alias)"},
     {"ENCODER RESET", cmd_sensor_encoder_reset, "Zerar encoders"},
+    {"ULTRA CAL", cmd_sensor_ultra_cal, "Calibrar com distancia conhecida"},
+    {"ULTRA INFO", cmd_sensor_ultra_info, "Estatisticas detalhadas do ultrassonico"},
+    {"ULTRA FILTER", cmd_sensor_ultra_filter, "Configurar filtro do ultrassonico"},
+    {"ULTRA RESET", cmd_sensor_ultra_reset, "Zerar estatisticas do ultrassonico"},
+    {"ULTRA EXPLAIN", cmd_sensor_ultra_explain, "Explicacao didatica do HC-SR04"},
     {"ULTRA READ", cmd_sensor_ultra_read, "Estado + tempo de eco"},
     {"READ ULTRA", cmd_sensor_ultra_read, "Estado + tempo de eco (alias)"},
     {"ULTRA DIST", cmd_sensor_ultra_dist, "Distancia convertida em cm"},

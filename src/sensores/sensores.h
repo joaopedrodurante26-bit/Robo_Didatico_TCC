@@ -91,6 +91,9 @@ unsigned long getUltraEchoTimeUs();
 // Estado do último ciclo de leitura do HC-SR04.
 UltrasonicStatus getUltraStatus();
 
+// Texto legível do status do HC-SR04.
+const char* ultraStatusToString(UltrasonicStatus status);
+
 // Sinaliza presença provável do sensor com base nas últimas leituras.
 bool ultraSensorPresente();
 

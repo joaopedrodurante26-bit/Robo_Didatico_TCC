@@ -15,6 +15,7 @@
 #include "controle/controle.h"
 #include "motores/motores.h"
 #include "sensores/sensores.h"
+#include "sensores/sensor_manager.h"
 #include "../robot/robot.h"
 #include "../robot/robot_state.h"
 #include "../testes/console/console.h"
@@ -211,6 +212,7 @@ static void configurarRotas() {
         RobotState st = getRobotStateSnapshot();
         String estado = "Aguardando";
         float distancia = st.distance;
+        UltraStats ultraStats = getUltraStats();
 
         if (distancia < 20.0f) {
             estado = "Obstáculo";
@@ -257,7 +259,27 @@ static void configurarRotas() {
         json += "\"vel_dir\": " + String(st.velDirCmd) + ",";
         json += "\"uptime_ms\": " + String(st.uptimeMs) + ",";
         json += "\"wifi_clients\": " + String(st.wifiClients) + ",";
-        json += "\"wifi_ip\": \"" + String(st.wifiIp) + "\"";
+        json += "\"wifi_ip\": \"" + String(st.wifiIp) + "\",";
+        json += "\"ultra\": {";
+        json += "\"rawDistance\": " + String(getUltraRawDistanceCm(), 2) + ",";
+        json += "\"filteredDistance\": " + String(getUltraFilteredDistanceCm(), 2) + ",";
+        json += "\"valid\": " + String(isUltraDistanceValid() ? "true" : "false") + ",";
+        json += "\"status\": \"" + String(ultraStatusToString(getUltraStatus())) + "\",";
+        json += "\"filter\": \"" + String(ultraFilterModeToString(getUltraFilterMode())) + "\",";
+        json += "\"calibration\": " + String(getUltraCalibrationFactor(), 6) + ",";
+        json += "\"ageMs\": " + String(getUltraLastAgeMs()) + ",";
+        json += "\"hz\": " + String(getUltraUpdateHz(), 1) + ",";
+        json += "\"timestampMs\": " + String(getUltraLastUpdateMs()) + ",";
+        json += "\"stats\": {";
+        json += "\"reads\": " + String(ultraStats.reads) + ",";
+        json += "\"validReads\": " + String(ultraStats.validReads) + ",";
+        json += "\"timeouts\": " + String(ultraStats.timeouts) + ",";
+        json += "\"outOfRange\": " + String(ultraStats.outOfRange) + ",";
+        json += "\"echoShort\": " + String(ultraStats.echoShort) + ",";
+        json += "\"echoLong\": " + String(ultraStats.echoLong) + ",";
+        json += "\"sensorError\": " + String(ultraStats.sensorError) + ",";
+        json += "\"invalidRead\": " + String(ultraStats.invalidRead);
+        json += "}";
         json += "}";
 
         server.send(200, "application/json", json);
@@ -265,6 +287,7 @@ static void configurarRotas() {
 
     server.on("/state", []() {
         RobotState st = getRobotStateSnapshot();
+        UltraStats ultraStats = getUltraStats();
         String json = "{";
         json += "\"mode\": \"" + String(robotModeToString(st.mode)) + "\",";
         json += "\"interfaceMode\": \"" + String(interfaceModeToString(st.interfaceMode)) + "\",";
@@ -273,6 +296,27 @@ static void configurarRotas() {
         json += "\"encoderLeft\": " + String(st.encoderLeft) + ",";
         json += "\"encoderRight\": " + String(st.encoderRight) + ",";
         json += "\"distance\": " + String(st.distance, 2) + ",";
+        json += "\"ultra\": {";
+        json += "\"rawDistance\": " + String(getUltraRawDistanceCm(), 2) + ",";
+        json += "\"filteredDistance\": " + String(getUltraFilteredDistanceCm(), 2) + ",";
+        json += "\"valid\": " + String(isUltraDistanceValid() ? "true" : "false") + ",";
+        json += "\"status\": \"" + String(ultraStatusToString(getUltraStatus())) + "\",";
+        json += "\"filter\": \"" + String(ultraFilterModeToString(getUltraFilterMode())) + "\",";
+        json += "\"calibration\": " + String(getUltraCalibrationFactor(), 6) + ",";
+        json += "\"ageMs\": " + String(getUltraLastAgeMs()) + ",";
+        json += "\"hz\": " + String(getUltraUpdateHz(), 1) + ",";
+        json += "\"timestampMs\": " + String(getUltraLastUpdateMs()) + ",";
+        json += "\"stats\": {";
+        json += "\"reads\": " + String(ultraStats.reads) + ",";
+        json += "\"validReads\": " + String(ultraStats.validReads) + ",";
+        json += "\"timeouts\": " + String(ultraStats.timeouts) + ",";
+        json += "\"outOfRange\": " + String(ultraStats.outOfRange) + ",";
+        json += "\"echoShort\": " + String(ultraStats.echoShort) + ",";
+        json += "\"echoLong\": " + String(ultraStats.echoLong) + ",";
+        json += "\"sensorError\": " + String(ultraStats.sensorError) + ",";
+        json += "\"invalidRead\": " + String(ultraStats.invalidRead);
+        json += "}";
+        json += "},";
         json += "\"accelX\": " + String(st.accel[0], 3) + ",";
         json += "\"accelY\": " + String(st.accel[1], 3) + ",";
         json += "\"accelZ\": " + String(st.accel[2], 3) + ",";

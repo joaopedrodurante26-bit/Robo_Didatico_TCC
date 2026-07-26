@@ -268,6 +268,19 @@ UltrasonicStatus getUltraStatus() {
     return ultraStatus;
 }
 
+const char* ultraStatusToString(UltrasonicStatus status) {
+    switch (status) {
+        case ULTRA_OK: return "OK";
+        case ULTRA_TIMEOUT: return "TIMEOUT";
+        case ULTRA_ECHO_TOO_SHORT: return "ECHO TOO SHORT";
+        case ULTRA_ECHO_TOO_LONG: return "ECHO TOO LONG";
+        case ULTRA_OUT_OF_RANGE: return "OUT OF RANGE";
+        case ULTRA_INVALID_READING: return "INVALID READING";
+        case ULTRA_SENSOR_ERROR: return "SENSOR ERROR";
+        default: return "UNKNOWN";
+    }
+}
+
 bool ultraSensorPresente() {
     return ultraPresente;
 }

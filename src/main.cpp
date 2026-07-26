@@ -63,10 +63,10 @@ void setup() {
     // Gerenciador central
     initRobot();
 
-    initSensorManager();
-
     // Comunicação
     initWiFi();
+
+    initSensorManager();
 
     // Console administrativo
     testes_iniciar();
