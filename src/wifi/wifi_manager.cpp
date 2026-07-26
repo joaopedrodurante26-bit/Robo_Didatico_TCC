@@ -15,6 +15,8 @@
 #include "controle/controle.h"
 #include "motores/motores.h"
 #include "sensores/sensores.h"
+#include "../robot/robot.h"
+#include "../testes/console/console.h"
 #include "../utils/logger.h"
 
 #include <Arduino.h>
@@ -114,9 +116,18 @@ static void configurarRotas() {
     // ROTA: CONTROLE (Joystick)
     // -------------------------------------------------
     server.on("/controle", []() {
+        if (server.hasArg("cmd")) {
+            String cmd = server.arg("cmd");
+            cmd.trim();
+
+            if (cmd.length() > 0) {
+                console_queueWebCommand(cmd);
+                Serial.print("[CMD] ");
+                Serial.println(cmd);
+            }
+        }
 
         if (server.hasArg("x") && server.hasArg("y")) {
-
             float x = server.arg("x").toFloat();
             float y = server.arg("y").toFloat();
 
@@ -125,13 +136,15 @@ static void configurarRotas() {
             Serial.print(" | Y: ");
             Serial.println(y);
 
-            // -------------------------------------------------
-            // CONVERSÃO: Joystick → Velocidade diferencial
-            // -------------------------------------------------
             setJoystick(x, y);
         }
 
         server.send(200, "text/plain", "OK");
+    });
+
+    server.on("/console-output", []() {
+        String out = console_getAndClearWebBuffer();
+        server.send(200, "text/plain", out);
     });
 
 
@@ -139,38 +152,38 @@ static void configurarRotas() {
     // ROTA: STATUS DO ROBÔ (API)
     // -------------------------------------------------
     server.on("/status", []() {
+        String estado = "Aguardando";
+        float distancia = getDistancia();
+
+        if (distancia < 20.0f) {
+            estado = "Obstáculo";
+        } else if (getCurrentMode() == MODE_REMOTE) {
+            estado = "Remote";
+        } else if (getCurrentMode() == MODE_AUTONOMOUS) {
+            estado = "Autônomo";
+        } else if (getCurrentMode() == MODE_TEST) {
+            estado = "Teste";
+        } else if (getCurrentMode() == MODE_DIAGNOSTIC) {
+            estado = "Diagnóstico";
+        }
 
         String json = "{";
-
-        // =========================
-        // ULTRASSÔNICO
-        // =========================
-        json += "\"distancia\": " + String(getDistancia()) + ",";
-
-        // =========================
-        // ENCODERS
-        // =========================
+        json += "\"distancia\": " + String((int)distancia) + ",";
+        json += "\"estado\": \"" + estado + "\",";
+        json += "\"modo\": \"" + String(robotModeToString(getCurrentMode())) + "\",";
+        json += "\"wifi\": \"" + String(ssid) + "\",";
         json += "\"encoder_esq\": " + String(getPulsosEsq()) + ",";
         json += "\"encoder_dir\": " + String(getPulsosDir()) + ",";
-
-        // =========================
-        // ACELERÔMETRO
-        // =========================
         json += "\"accel\": {";
         json += "\"x\": " + String(getAccelX(), 3) + ",";
         json += "\"y\": " + String(getAccelY(), 3) + ",";
         json += "\"z\": " + String(getAccelZ(), 3);
         json += "},";
-
-        // =========================
-        // GIROSCÓPIO
-        // =========================
         json += "\"gyro\": {";
         json += "\"x\": " + String(getGyroX()) + ",";
         json += "\"y\": " + String(getGyroY()) + ",";
         json += "\"z\": " + String(getGyroZ());
         json += "}";
-
         json += "}";
 
         server.send(200, "application/json", json);

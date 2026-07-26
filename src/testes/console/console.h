@@ -39,4 +39,16 @@ void console_stopStreams();
 // Força reimpressão do prompt (útil após saída das rotinas)
 void console_printPrompt();
 
+// Envia uma linha para o console web, se disponível
+void console_appendWebLine(const String& line);
+
+// Lê a próxima linha do console web, se houver
+String console_readWebCommand();
+
+// Enfileira um comando vindo da interface web
+void console_queueWebCommand(const String& cmd);
+
+// Retorna o conteúdo atual do console web e limpa o buffer
+String console_getAndClearWebBuffer();
+
 #endif

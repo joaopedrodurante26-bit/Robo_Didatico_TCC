@@ -14,6 +14,8 @@
 #include "../config/configuracao.h"
 #include "../controle/controle.h"
 #include "../robot/robot.h"
+#include "../sensores/sensores.h"
+#include "../testes/console/console.h"
 #include "../utils/logger.h"
 #include "../config/configuracao.h"
 
@@ -23,6 +25,7 @@
 
 static int velEsqAtual = 0;
 static int velDirAtual = 0;
+static bool segurancaAtiva = false;
 
 // =====================================================
 // FUNÇÃO DE SUAVIZAÇÃO (RAMP)
@@ -96,8 +99,39 @@ void initMotores()
 // INTERFACE PRINCIPAL
 // =====================================================
 
+static void verificarSeguranca() {
+    float distancia = getDistancia();
+    bool obstaculo = (distancia > 0.0f && distancia <= 5.0f);
+
+    if (obstaculo) {
+        if (!segurancaAtiva) {
+            segurancaAtiva = true;
+            String mensagem = "[SEGURANCA] Obstaculo detectado a " + String(distancia, 1) + " cm! Parando motores.";
+            Serial.println(mensagem);
+            console_appendWebLine(mensagem);
+        }
+
+        velEsqAtual = 0;
+        velDirAtual = 0;
+
+        controlarMotor(PWM_CANAL_MOTOR_E, PIN_MOTOR_E_IN1, PIN_MOTOR_E_IN2, 0);
+        controlarMotor(PWM_CANAL_MOTOR_D, PIN_MOTOR_D_IN1, PIN_MOTOR_D_IN2, 0);
+        return;
+    }
+
+    if (segurancaAtiva) {
+        segurancaAtiva = false;
+    }
+}
+
 static void aplicarVelocidadeInterna(int velEsq, int velDir, bool usarSuavizacao)
 {
+    verificarSeguranca();
+
+    if (segurancaAtiva) {
+        return;
+    }
+
     if (usarSuavizacao) {
         velEsqAtual = suavizar(velEsqAtual, velEsq);
         velDirAtual = suavizar(velDirAtual, velDir);

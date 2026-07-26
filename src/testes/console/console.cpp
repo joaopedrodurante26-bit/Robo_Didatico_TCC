@@ -27,6 +27,10 @@ static bool mpuStream = false;
 static bool ultraStream = false;
 static unsigned long lastStreamMillis = 0;
 
+// Console web
+static String webConsoleBuffer = "";
+static String webCommandBuffer = "";
+
 // Forward
 static void printBootStatus();
 static void printPrompt();
@@ -56,6 +60,37 @@ void console_startUltraStream() { ultraStream = true; lastStreamMillis = millis(
 void console_stopStreams() { mpuStream = false; ultraStream = false; }
 
 void console_printPrompt() { printPrompt(); }
+
+void console_appendWebLine(const String& line) {
+    if (line.length() == 0) return;
+    webConsoleBuffer += line;
+    webConsoleBuffer += "\n";
+}
+
+String console_readWebCommand() {
+    if (webCommandBuffer.length() == 0) return "";
+    String cmd = webCommandBuffer;
+    int idx = cmd.indexOf('\n');
+    if (idx >= 0) {
+        cmd = cmd.substring(0, idx);
+        webCommandBuffer = webCommandBuffer.substring(idx + 1);
+    } else {
+        webCommandBuffer = "";
+    }
+    return cmd;
+}
+
+void console_queueWebCommand(const String& cmd) {
+    if (cmd.length() == 0) return;
+    webCommandBuffer += cmd;
+    webCommandBuffer += "\n";
+}
+
+String console_getAndClearWebBuffer() {
+    String out = webConsoleBuffer;
+    webConsoleBuffer = "";
+    return out;
+}
 
 // Executa um comando contra uma tabela específica
 static bool executarComandoDaTabela(Command* tabela, size_t tamanho, String entrada) {
@@ -100,11 +135,14 @@ static bool executarComandoDaTabela(Command* tabela, size_t tamanho, String entr
 
 // Imprime prompt e cabeçalho
 static void printPrompt() {
+    String prompt;
     switch (state) {
-        case STATE_MAIN: Serial.print("ROBO> "); break;
-        case STATE_MOTOR: Serial.print("MOTOR> "); break;
-        case STATE_SENSOR: Serial.print("SENSOR> "); break;
+        case STATE_MAIN: prompt = "ROBO> "; break;
+        case STATE_MOTOR: prompt = "MOTOR> "; break;
+        case STATE_SENSOR: prompt = "SENSOR> "; break;
     }
+    Serial.print(prompt);
+    console_appendWebLine(prompt);
 }
 
 static void printBootStatus() {
@@ -140,28 +178,45 @@ void console_init() {
     printPrompt();
 }
 
+static void executarComando(String cmd) {
+    if (cmd.length() == 0) return;
+
+    Serial.println();
+    console_appendWebLine(cmd);
+    String linha = cmd;
+
+    switch (state) {
+        case STATE_MAIN:
+            if (!executarComandoDaTabela(mainTable, mainTableSize, linha)) {
+                Serial.println("Comando não reconhecido. Digite HELP.");
+                console_appendWebLine("Comando não reconhecido. Digite HELP.");
+            }
+            break;
+        case STATE_MOTOR:
+            if (!executarComandoDaTabela(motorTable, motorTableSize, linha)) {
+                Serial.println("Comando MOTOR não reconhecido. Digite HELP.");
+                console_appendWebLine("Comando MOTOR não reconhecido. Digite HELP.");
+            }
+            break;
+        case STATE_SENSOR:
+            if (!executarComandoDaTabela(sensorTable, sensorTableSize, linha)) {
+                Serial.println("Comando SENSOR não reconhecido. Digite HELP.");
+                console_appendWebLine("Comando SENSOR não reconhecido. Digite HELP.");
+            }
+            break;
+    }
+
+    printPrompt();
+}
+
 void console_loop() {
     while (Serial.available()) {
         char c = Serial.read();
         if (c == '\r') continue;
         if (c == '\n') {
-            Serial.println();
             String cmd = lineBuffer;
             lineBuffer = "";
-            if (cmd.length() > 0) {
-                switch (state) {
-                    case STATE_MAIN:
-                        if (!executarComandoDaTabela(mainTable, mainTableSize, cmd)) Serial.println("Comando não reconhecido. Digite HELP.");
-                        break;
-                    case STATE_MOTOR:
-                        if (!executarComandoDaTabela(motorTable, motorTableSize, cmd)) Serial.println("Comando MOTOR não reconhecido. Digite HELP.");
-                        break;
-                    case STATE_SENSOR:
-                        if (!executarComandoDaTabela(sensorTable, sensorTableSize, cmd)) Serial.println("Comando SENSOR não reconhecido. Digite HELP.");
-                        break;
-                }
-            }
-            printPrompt();
+            executarComando(cmd);
         }
         else if (c == 8 || c == 127) {
             if (lineBuffer.length() > 0) {
@@ -177,21 +232,37 @@ void console_loop() {
         }
     }
 
+    String webCmd = console_readWebCommand();
+    while (webCmd.length() > 0) {
+        executarComando(webCmd);
+        webCmd = console_readWebCommand();
+    }
+
     if (mpuStream && millis() - lastStreamMillis > 200) {
         lastStreamMillis = millis();
         Serial.println("Accel");
+        console_appendWebLine("Accel");
         Serial.println("X = " + String(getAccelX(), 3) + " g");
+        console_appendWebLine("X = " + String(getAccelX(), 3) + " g");
         Serial.println("Y = " + String(getAccelY(), 3) + " g");
+        console_appendWebLine("Y = " + String(getAccelY(), 3) + " g");
         Serial.println("Z = " + String(getAccelZ(), 3) + " g");
+        console_appendWebLine("Z = " + String(getAccelZ(), 3) + " g");
         Serial.println("Gyro");
+        console_appendWebLine("Gyro");
         Serial.println("X = " + String(getGyroX(), 3) + " °/s");
+        console_appendWebLine("X = " + String(getGyroX(), 3) + " °/s");
         Serial.println("Y = " + String(getGyroY(), 3) + " °/s");
+        console_appendWebLine("Y = " + String(getGyroY(), 3) + " °/s");
         Serial.println("Z = " + String(getGyroZ(), 3) + " °/s");
+        console_appendWebLine("Z = " + String(getGyroZ(), 3) + " °/s");
     }
 
     if (ultraStream && millis() - lastStreamMillis > 200) {
         lastStreamMillis = millis();
         Serial.println("Distância");
+        console_appendWebLine("Distância");
         Serial.println(String(getDistancia()) + " cm");
+        console_appendWebLine(String(getDistancia()) + " cm");
     }
 }

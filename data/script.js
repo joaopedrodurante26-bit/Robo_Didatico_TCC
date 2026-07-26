@@ -10,6 +10,21 @@ function appendLine(text, type = 'info') {
   output.scrollTop = output.scrollHeight;
 }
 
+function atualizarConsoleWeb() {
+  fetch('/console-output')
+    .then((res) => res.text())
+    .then((texto) => {
+      if (!texto) return;
+      const linhas = texto.split('\n');
+      linhas.forEach((linha) => {
+        if (linha.trim()) {
+          appendLine(linha, 'info');
+        }
+      });
+    })
+    .catch(() => {});
+}
+
 function atualizarStatus() {
   fetch('/status')
     .then((res) => res.json())
@@ -31,7 +46,8 @@ function enviarComando() {
   appendLine(`> ${cmd}`, 'cmd');
   cmdInput.value = '';
 
-  fetch(`/controle?x=0&y=0`) 
+  fetch(`/controle?cmd=${encodeURIComponent(cmd)}`)
+    .then((res) => res.text())
     .then(() => {
       appendLine('Comando enviado para o robô.', 'ok');
     })
@@ -48,3 +64,4 @@ cmdInput.addEventListener('keydown', (e) => {
 appendLine('ROBO> Sistema pronto', 'info');
 appendLine('ROBO> Digite um comando para interagir', 'info');
 setInterval(atualizarStatus, 1000);
+setInterval(atualizarConsoleWeb, 500);
