@@ -200,25 +200,7 @@ void initSensores() {
     }
 }
 
-// =====================================================
-// ATUALIZAÇÃO (PROCESSAMENTO FUTURO)
-// =====================================================
-// Aqui futuramente serão calculados:
-//
-// - velocidade (RPM)
-// - distância percorrida
-// - filtros de ruído
-//
-
-void atualizarSensores() {
-    // =========================
-    // ULTRASSÔNICO
-    // =========================
-    ultra_updateDriver();
-
-    // =========================
-    // IMU
-    // =========================
+static void imu_updateDriver() {
     sensors_event_t accel;
     sensors_event_t gyro;
     sensors_event_t temp;
@@ -232,6 +214,35 @@ void atualizarSensores() {
     gyroX = gyro.gyro.x;
     gyroY = gyro.gyro.y;
     gyroZ = gyro.gyro.z;
+}
+
+// =====================================================
+// ATUALIZAÇÃO (PROCESSAMENTO FUTURO)
+// =====================================================
+// Aqui futuramente serão calculados:
+//
+// - velocidade (RPM)
+// - distância percorrida
+// - filtros de ruído
+//
+
+void atualizarSensores() {
+    atualizarUltrassonico();
+    atualizarIMU();
+}
+
+void atualizarUltrassonico() {
+    // =========================
+    // ULTRASSÔNICO
+    // =========================
+    ultra_updateDriver();
+}
+
+void atualizarIMU() {
+    // =========================
+    // IMU
+    // =========================
+    imu_updateDriver();
 }
 
 // =====================================================

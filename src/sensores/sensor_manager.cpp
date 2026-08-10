@@ -27,6 +27,7 @@ static bool g_ultraConfigLoaded = false;
 
 static const char* ULTRA_CONFIG_PATH = "/ultra_config.json";
 static const float ULTRA_EXP_ALPHA = 0.35f;
+static const unsigned long ULTRA_PERIOD_MS = 60UL;
 
 const char* ultraFilterModeToString(UltraFilterMode mode);
 
@@ -117,6 +118,57 @@ static void resetFilterState() {
     g_ultraExpInitialized = false;
 }
 
+static void updateUltraSampleIfDue(bool force) {
+    unsigned long now = millis();
+    if (!force && g_ultraLastUpdateMs > 0 && (now - g_ultraLastUpdateMs) < ULTRA_PERIOD_MS) {
+        return;
+    }
+
+    atualizarUltrassonico();
+
+    g_ultraPreviousUpdateMs = g_ultraLastUpdateMs;
+    g_ultraLastUpdateMs = now;
+    if (g_ultraPreviousUpdateMs > 0) {
+        unsigned long delta = g_ultraLastUpdateMs - g_ultraPreviousUpdateMs;
+        if (delta > 0) {
+            g_ultraUpdateHz = 1000.0f / static_cast<float>(delta);
+        }
+    }
+
+    UltrasonicStatus ultraStatus = getUltraStatus();
+    unsigned long ultraEchoUs = getUltraEchoTimeUs();
+    g_ultraRawDistanceCm = (ultraEchoUs > 0) ? echoUsToCm(ultraEchoUs) : -1.0f;
+
+    g_ultraStats.reads++;
+    if (ultraStatus == ULTRA_OK) {
+        g_ultraStats.validReads++;
+    } else if (ultraStatus == ULTRA_TIMEOUT) {
+        g_ultraStats.timeouts++;
+    } else if (ultraStatus == ULTRA_OUT_OF_RANGE) {
+        g_ultraStats.outOfRange++;
+    } else if (ultraStatus == ULTRA_ECHO_TOO_SHORT) {
+        g_ultraStats.echoShort++;
+    } else if (ultraStatus == ULTRA_ECHO_TOO_LONG) {
+        g_ultraStats.echoLong++;
+    } else if (ultraStatus == ULTRA_SENSOR_ERROR) {
+        g_ultraStats.sensorError++;
+    } else if (ultraStatus == ULTRA_INVALID_READING) {
+        g_ultraStats.invalidRead++;
+    }
+
+    if (ultraStatus == ULTRA_OK && g_ultraRawDistanceCm > 0.0f) {
+        float filtered = applyUltraFilter(g_ultraRawDistanceCm);
+        if (filtered > 0.0f) {
+            g_ultraDistanceCm = filtered * g_ultraCalibrationFactor;
+            g_ultraDistanceValid = true;
+            return;
+        }
+    }
+
+    g_ultraDistanceCm = -1.0f;
+    g_ultraDistanceValid = false;
+}
+
 static bool saveUltraConfig() {
     StaticJsonDocument<256> doc;
     doc["calibration"] = g_ultraCalibrationFactor;
@@ -176,55 +228,14 @@ static void loadUltraConfig() {
 
 void initSensorManager() {
     loadUltraConfig();
-    // Mantém o estado consistente no boot com uma leitura inicial.
+    // Mantém o estado consistente no boot com uma leitura inicial do ultrassônico.
+    updateUltraSampleIfDue(true);
     updateSensorManager();
 }
 
 void updateSensorManager() {
-    atualizarSensores();
-
-    g_ultraPreviousUpdateMs = g_ultraLastUpdateMs;
-    g_ultraLastUpdateMs = millis();
-    if (g_ultraPreviousUpdateMs > 0) {
-        unsigned long delta = g_ultraLastUpdateMs - g_ultraPreviousUpdateMs;
-        if (delta > 0) {
-            g_ultraUpdateHz = 1000.0f / static_cast<float>(delta);
-        }
-    }
-
-    UltrasonicStatus ultraStatus = getUltraStatus();
-    unsigned long ultraEchoUs = getUltraEchoTimeUs();
-    g_ultraDistanceCm = (ultraEchoUs > 0) ? echoUsToCm(ultraEchoUs) : -1.0f;
-    g_ultraRawDistanceCm = g_ultraDistanceCm;
-
-    g_ultraStats.reads++;
-    if (ultraStatus == ULTRA_OK) {
-        g_ultraStats.validReads++;
-    } else if (ultraStatus == ULTRA_TIMEOUT) {
-        g_ultraStats.timeouts++;
-    } else if (ultraStatus == ULTRA_OUT_OF_RANGE) {
-        g_ultraStats.outOfRange++;
-    } else if (ultraStatus == ULTRA_ECHO_TOO_SHORT) {
-        g_ultraStats.echoShort++;
-    } else if (ultraStatus == ULTRA_ECHO_TOO_LONG) {
-        g_ultraStats.echoLong++;
-    } else if (ultraStatus == ULTRA_SENSOR_ERROR) {
-        g_ultraStats.sensorError++;
-    } else if (ultraStatus == ULTRA_INVALID_READING) {
-        g_ultraStats.invalidRead++;
-    }
-
-    float filtered = applyUltraFilter(g_ultraRawDistanceCm);
-    if (ultraStatus == ULTRA_OK && filtered > 0.0f) {
-        g_ultraDistanceCm = filtered * g_ultraCalibrationFactor;
-        g_ultraDistanceValid = true;
-    } else if (ultraStatus == ULTRA_OUT_OF_RANGE && filtered > 0.0f) {
-        g_ultraDistanceCm = filtered * g_ultraCalibrationFactor;
-        g_ultraDistanceValid = false;
-    } else {
-        g_ultraDistanceCm = -1.0f;
-        g_ultraDistanceValid = false;
-    }
+    atualizarIMU();
+    updateUltraSampleIfDue(false);
 
     robotStateSetSensors(
         getPulsosEsq(),
@@ -319,6 +330,10 @@ void resetUltraStats() {
 
 bool calibrateUltraWithKnownDistance(float knownDistanceCm) {
     if (!isfinite(knownDistanceCm) || knownDistanceCm <= 0.0f) {
+        return false;
+    }
+
+    if (getUltraStatus() != ULTRA_OK) {
         return false;
     }
 

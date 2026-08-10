@@ -48,6 +48,10 @@ void initSensores();
 //
 void atualizarSensores();
 
+// Atualização individual dos drivers para escalonamento por frequência.
+void atualizarUltrassonico();
+void atualizarIMU();
+
 // =====================================================
 // ENCODERS (MOVIMENTO)
 // =====================================================
