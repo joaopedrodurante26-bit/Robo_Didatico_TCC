@@ -1,0 +1,10 @@
+MOTOR - Comandos de movimento
+
+MOTOR F <velocidade> [tempo_s]
+MOTOR T <velocidade> [tempo_s]
+MOTOR VE <velocidade> [tempo_s]
+MOTOR VD <velocidade> [tempo_s]
+MOTOR STOP
+
+Se [tempo_s] for informado: executa por N segundos e para.
+Sem [tempo_s]: movimento continuo ate novo comando (ex.: STOP).

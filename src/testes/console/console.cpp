@@ -80,6 +80,46 @@ void console_appendWebLine(const String& line) {
     webConsoleBuffer += "\n";
 }
 
+bool console_printTextFile(const char* path) {
+    if (!path || path[0] == '\0') {
+        return false;
+    }
+
+    if (!LittleFS.begin()) {
+        console_println("Falha ao montar LittleFS para exibir ajuda.");
+        return false;
+    }
+
+    File file = LittleFS.open(path, "r");
+    if (!file) {
+        console_println("Arquivo de ajuda nao encontrado.");
+        return false;
+    }
+
+    String line = "";
+    while (file.available()) {
+        char c = (char)file.read();
+        if (c == '\r') {
+            continue;
+        }
+
+        if (c == '\n') {
+            console_println(line);
+            line = "";
+            continue;
+        }
+
+        line += c;
+    }
+
+    if (line.length() > 0) {
+        console_println(line);
+    }
+
+    file.close();
+    return true;
+}
+
 String console_readWebCommand() {
     if (webCommandBuffer.length() == 0) return "";
     String cmd = webCommandBuffer;

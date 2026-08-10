@@ -1,0 +1,17 @@
+MOTOR F - Frente
+
+Sintaxe
+MOTOR F <velocidade> [tempo_s]
+
+Parametros
+<velocidade> : intensidade PWM dos dois motores.
+[tempo_s]    : duracao em segundos (opcional).
+
+Comportamento
+Com tempo: mantem movimento por N segundos e finaliza comando.
+Sem tempo: mantem movimento continuo ate STOP ou outro comando.
+A seguranca ultrassonica pode interromper o comando se houver obstaculo.
+
+Exemplos
+MOTOR F 120
+MOTOR F 180 2

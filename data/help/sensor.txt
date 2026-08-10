@@ -1,0 +1,4 @@
+SENSOR
+Use SENSOR para entrar no submenu.
+Depois use HELP para comandos do submenu.
+Atalho: HELP ULTRA para comandos do HC-SR04.

@@ -48,6 +48,9 @@ void console_clear();
 // Envia uma linha para o console web, se disponível
 void console_appendWebLine(const String& line);
 
+// Imprime um arquivo texto do LittleFS na saída do console
+bool console_printTextFile(const char* path);
+
 // Lê a próxima linha do console web, se houver
 String console_readWebCommand();
 

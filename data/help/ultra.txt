@@ -1,0 +1,32 @@
+ULTRA - Comandos do HC-SR04
+
+ULTRA READ
+Mostra estado do driver e tempo de eco em us.
+
+ULTRA RAW
+Valida trigger/echo e exibe o tempo bruto do eco.
+
+ULTRA STATUS
+Exibe estado semantico, presenca e contadores.
+
+ULTRA DIST
+Converte tempo de eco para distancia em cm (via SensorManager).
+
+ULTRA INFO
+Mostra estatisticas, timestamp, frequencia, filtro e calibracao.
+
+ULTRA FILTER <NONE|MEDIAN|MOVING|EXP>
+Configura o filtro de leitura e salva no LittleFS.
+
+ULTRA CAL <distancia_cm>
+Calcula fator de calibracao usando uma distancia conhecida.
+
+ULTRA RESET
+Zera estatisticas do ultrassonico.
+
+ULTRA EXPLAIN
+Explica o principio de funcionamento do HC-SR04.
+
+ULTRA STREAM
+Inicia leitura continua da distancia no console.
+Pare com STOP ULTRA ou STOP.

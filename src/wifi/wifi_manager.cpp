@@ -86,7 +86,7 @@ static void configurarRotas() {
         logInfo("[HTTP] Cliente acessou /");
         setInterfaceMode(UI_CONSOLE);
         enviarArquivoOuFallback(
-            "/index.html",
+            "/web/index.html",
             "text/html",
             "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Robo Vespa</title><style>body{font-family:Arial,sans-serif;background:#111;color:#fff;padding:24px}h1{margin-bottom:8px}p{color:#ccc}</style></head><body><h1>Robô Vespa</h1><p>Interface web pronta no firmware.</p></body></html>"
         );
@@ -96,7 +96,7 @@ static void configurarRotas() {
         logInfo("[HTTP] Cliente acessou /control");
         setInterfaceMode(UI_CONTROL);
         enviarArquivoOuFallback(
-            "/control.html",
+            "/web/control.html",
             "text/html",
             "<!DOCTYPE html><html><body><h1>Control</h1><p>control.html não encontrado.</p></body></html>"
         );
@@ -106,7 +106,7 @@ static void configurarRotas() {
         logInfo("[HTTP] Cliente acessou /monitor");
         setInterfaceMode(UI_MONITOR);
         enviarArquivoOuFallback(
-            "/monitor.html",
+            "/web/monitor.html",
             "text/html",
             "<!DOCTYPE html><html><body><h1>Monitor</h1><p>monitor.html não encontrado.</p></body></html>"
         );
@@ -116,7 +116,7 @@ static void configurarRotas() {
         logInfo("[HTTP] Cliente acessou /config");
         setInterfaceMode(UI_CONFIGURATION);
         enviarArquivoOuFallback(
-            "/config.html",
+            "/web/config.html",
             "text/html",
             "<!DOCTYPE html><html><body><h1>Config</h1><p>config.html não encontrado.</p></body></html>"
         );
@@ -127,7 +127,7 @@ static void configurarRotas() {
     // -------------------------------------------------
     server.on("/script.js", []() {
         enviarArquivoOuFallback(
-            "/script.js",
+            "/web/script.js",
             "application/javascript",
             "console.log('Script fallback carregado');"
         );
@@ -135,7 +135,7 @@ static void configurarRotas() {
 
     server.on("/control.js", []() {
         enviarArquivoOuFallback(
-            "/control.js",
+            "/web/control.js",
             "application/javascript",
             "console.log('control.js não encontrado');"
         );
@@ -143,7 +143,7 @@ static void configurarRotas() {
 
     server.on("/monitor.js", []() {
         enviarArquivoOuFallback(
-            "/monitor.js",
+            "/web/monitor.js",
             "application/javascript",
             "console.log('monitor.js não encontrado');"
         );
@@ -151,7 +151,7 @@ static void configurarRotas() {
 
     server.on("/config.js", []() {
         enviarArquivoOuFallback(
-            "/config.js",
+            "/web/config.js",
             "application/javascript",
             "console.log('config.js não encontrado');"
         );
@@ -162,7 +162,7 @@ static void configurarRotas() {
     // -------------------------------------------------
     server.on("/style.css", []() {
         enviarArquivoOuFallback(
-            "/style.css",
+            "/web/style.css",
             "text/css",
             "body{font-family:Arial,sans-serif;text-align:center;}"
         );

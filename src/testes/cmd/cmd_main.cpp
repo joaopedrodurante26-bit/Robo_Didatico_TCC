@@ -49,135 +49,35 @@ static String tailToken(const String& text) {
     return rest;
 }
 
-static void printGeneralHelp() {
-    console_println("Uso: HELP [OBJETO] [COMANDO]");
-    console_println("");
-    console_println("Exemplos:");
-    console_println("HELP ULTRA");
-    console_println("HELP MOTOR F");
-    console_println("");
-    console_println("Objetos disponíveis:");
-    console_println("MAIN   - comandos gerais do sistema");
-    console_println("MOTOR  - comandos de movimento");
-    console_println("ULTRA  - comandos do ultrassônico");
-    console_println("SENSOR - menu de sensores");
-}
-
-static void printMainHelp() {
-    console_println("MAIN - Comandos gerais");
-    console_println("");
-    console_println("HELP - Mostra ajuda");
-    console_println("STATUS - Estado do sistema");
-    console_println("VERSION - Versao do firmware");
-    console_println("MODE - Altera modo operacional");
-    console_println("REBOOT - Reinicia o ESP32");
-    console_println("CLEAR - Limpa o terminal");
-    console_println("MOTOR - Entra no menu de motores");
-    console_println("SENSOR - Entra no menu de sensores");
-    console_println("WIFI - Informacoes do WiFi");
-    console_println("FS - Informacoes do sistema de arquivos");
-    console_println("DIAG - Executa diagnostico automatico");
-    console_println("STOP - Interrompe streams");
-    console_println("UI - Mostra/altera interface");
-}
-
-static void printUltraHelp() {
-    console_println("ULTRA - Comandos do HC-SR04");
-    console_println("");
-    console_println("ULTRA READ");
-    console_println("Mostra estado do driver e tempo de eco em us.");
-    console_println("");
-    console_println("ULTRA RAW");
-    console_println("Valida trigger/echo e exibe o tempo bruto do eco.");
-    console_println("");
-    console_println("ULTRA STATUS");
-    console_println("Exibe estado semântico, presença e contadores.");
-    console_println("");
-    console_println("ULTRA DIST");
-    console_println("Converte tempo de eco para distância em cm (via SensorManager).");
-    console_println("");
-    console_println("ULTRA INFO");
-    console_println("Mostra estatisticas, timestamp, frequencia, filtro e calibracao.");
-    console_println("");
-    console_println("ULTRA FILTER <NONE|MEDIAN|MOVING|EXP>");
-    console_println("Configura o filtro de leitura e salva no LittleFS.");
-    console_println("");
-    console_println("ULTRA CAL <distancia_cm>");
-    console_println("Calcula fator de calibracao usando uma distancia conhecida.");
-    console_println("");
-    console_println("ULTRA RESET");
-    console_println("Zera estatisticas do ultrassonico.");
-    console_println("");
-    console_println("ULTRA EXPLAIN");
-    console_println("Explica o principio de funcionamento do HC-SR04.");
-    console_println("");
-    console_println("ULTRA STREAM");
-    console_println("Inicia leitura contínua da distância no console.");
-    console_println("Pare com STOP ULTRA ou STOP.");
-}
-
-static void printMotorHelp() {
-    console_println("MOTOR - Comandos de movimento");
-    console_println("");
-    console_println("MOTOR F <velocidade> [tempo_s]");
-    console_println("MOTOR T <velocidade> [tempo_s]");
-    console_println("MOTOR VE <velocidade> [tempo_s]");
-    console_println("MOTOR VD <velocidade> [tempo_s]");
-    console_println("MOTOR STOP");
-    console_println("");
-    console_println("Faixa de velocidade: " + String(PWM_MIN) + " até " + String(PWM_MAX));
-    console_println("Se [tempo_s] for informado: executa por N segundos e para.");
-    console_println("Sem [tempo_s]: movimento contínuo até novo comando (ex.: STOP).");
-}
-
-static void printMotorFHelp() {
-    console_println("MOTOR F - Frente");
-    console_println("");
-    console_println("Sintaxe");
-    console_println("MOTOR F <velocidade> [tempo_s]");
-    console_println("");
-    console_println("Parâmetros");
-    console_println("<velocidade> : intensidade PWM dos dois motores.");
-    console_println("[tempo_s]    : duração em segundos (opcional).");
-    console_println("");
-    console_println("Comportamento");
-    console_println("Com tempo: mantém movimento por N segundos e finaliza comando.");
-    console_println("Sem tempo: mantém movimento contínuo até STOP ou outro comando.");
-    console_println("A segurança ultrassônica pode interromper o comando se houver obstáculo.");
-    console_println("");
-    console_println("Exemplos");
-    console_println("MOTOR F 120");
-    console_println("MOTOR F 180 2");
+static void printHelpFile(const char* path) {
+    if (!console_printTextFile(path)) {
+        console_println("Ajuda indisponivel no momento.");
+    }
 }
 
 static void printMotorSubcommandHelp(const String& sub) {
     if (sub == "F" || sub == "FORWARD") {
-        printMotorFHelp();
+        printHelpFile("/help/motor_f.txt");
         return;
     }
 
     if (sub == "T" || sub == "BACKWARD") {
-        console_println("MOTOR T - Ré");
-        console_println("Sintaxe: MOTOR T <velocidade> [tempo_s]");
-        console_println("Sem tempo: contínuo até STOP ou novo comando.");
+        printHelpFile("/help/motor_t.txt");
         return;
     }
 
     if (sub == "VE" || sub == "TURN LEFT") {
-        console_println("MOTOR VE - Curva à esquerda");
-        console_println("Sintaxe: MOTOR VE <velocidade> [tempo_s]");
+        printHelpFile("/help/motor_ve.txt");
         return;
     }
 
     if (sub == "VD" || sub == "TURN RIGHT") {
-        console_println("MOTOR VD - Curva à direita");
-        console_println("Sintaxe: MOTOR VD <velocidade> [tempo_s]");
+        printHelpFile("/help/motor_vd.txt");
         return;
     }
 
     if (sub == "STOP") {
-        console_println("MOTOR STOP");
-        console_println("Interrompe o comando de movimento ativo e para os motores.");
+        printHelpFile("/help/motor_stop.txt");
         return;
     }
 
@@ -214,7 +114,7 @@ Command* getMainCommands(size_t &count) {
 static void cmd_help_main(String args) {
     String entrada = upTrim(args);
     if (entrada.length() == 0) {
-        printGeneralHelp();
+        printHelpFile("/help/general.txt");
         return;
     }
 
@@ -222,18 +122,19 @@ static void cmd_help_main(String args) {
     String restante = tailToken(entrada);
 
     if (objeto == "MAIN") {
-        printMainHelp();
+        printHelpFile("/help/main.txt");
         return;
     }
 
     if (objeto == "ULTRA") {
-        printUltraHelp();
+        printHelpFile("/help/ultra.txt");
         return;
     }
 
     if (objeto == "MOTOR") {
         if (restante.length() == 0) {
-            printMotorHelp();
+            printHelpFile("/help/motor.txt");
+            console_println("Faixa de velocidade: " + String(PWM_MIN) + " ate " + String(PWM_MAX));
         } else {
             printMotorSubcommandHelp(restante);
         }
@@ -241,10 +142,7 @@ static void cmd_help_main(String args) {
     }
 
     if (objeto == "SENSOR") {
-        console_println("SENSOR");
-        console_println("Use SENSOR para entrar no submenu.");
-        console_println("Depois use HELP para comandos do submenu.");
-        console_println("Atalho: HELP ULTRA para comandos do HC-SR04.");
+        printHelpFile("/help/sensor.txt");
         return;
     }
 

@@ -1,0 +1,3 @@
+MOTOR VD - Curva a direita
+
+Sintaxe: MOTOR VD <velocidade> [tempo_s]

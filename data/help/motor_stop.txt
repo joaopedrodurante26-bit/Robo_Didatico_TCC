@@ -1,0 +1,2 @@
+MOTOR STOP
+Interrompe o comando de movimento ativo e para os motores.

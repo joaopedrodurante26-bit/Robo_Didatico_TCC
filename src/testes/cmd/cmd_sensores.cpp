@@ -188,22 +188,9 @@ static void cmd_sensor_ultra_stream(String args) { console_startUltraStream(); c
 static void cmd_sensor_stop(String args) { console_stopStreams(); console_println("[OK] STREAM interrompido."); }
 static void cmd_sensor_exit(String args) { console_setState(STATE_MAIN); }
 static void cmd_sensor_help(String args) {
-    console_println("Comandos sensores:");
-    console_println("MPU READ - leituras IMU");
-    console_println("MPU STREAM - fluxo contínuo (STOP para parar)");
-    console_println("ENCODER READ - pulsos dos encoders");
-    console_println("ENCODER RESET - zerar encoders");
-    console_println("ULTRA READ - estado + tempo de eco");
-    console_println("ULTRA DIST - distancia convertida (cm)");
-    console_println("ULTRA RAW - valida trigger/echo + tempo");
-    console_println("ULTRA STATUS - status e estatísticas básicas");
-    console_println("ULTRA INFO - estatísticas, timestamp, frequencia, filtro e calibracao");
-    console_println("ULTRA FILTER - altera o filtro: NONE, MEDIAN, MOVING, EXP");
-    console_println("ULTRA CAL - calibra com distancia conhecida");
-    console_println("ULTRA RESET - zera estatisticas");
-    console_println("ULTRA EXPLAIN - explica o funcionamento do HC-SR04");
-    console_println("ULTRA STREAM - fluxo contínuo");
-    console_println("EXIT - voltar ao menu principal");
+    if (!console_printTextFile("/help/sensor_menu.txt")) {
+        console_println("Ajuda indisponivel no momento.");
+    }
 }
 
 static Command comandosSensor[] = {

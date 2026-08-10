@@ -1,0 +1,4 @@
+MOTOR T - Re
+
+Sintaxe: MOTOR T <velocidade> [tempo_s]
+Sem tempo: continuo ate STOP ou novo comando.

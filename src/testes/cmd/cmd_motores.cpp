@@ -126,7 +126,11 @@ static void cmd_motor_e(String args) { int v = args.toInt(); setVelocidade(v, 0)
 static void cmd_motor_d(String args) { int v = args.toInt(); setVelocidade(0, v); console_println("[OK] MOTOR D " + String(v)); }
 static void cmd_motor_stop(String args) { motores_finalizarComando(); console_println("[OK] MOTOR STOP"); }
 static void cmd_motor_exit(String args) { motores_finalizarComando(); console_setState(STATE_MAIN); console_println("[OK] MOTOR EXIT"); }
-static void cmd_motor_help(String args) { console_println("Comandos Motores: F T VE VD E D STOP EXIT"); }
+static void cmd_motor_help(String args) {
+    if (!console_printTextFile("/help/motor_menu.txt")) {
+        console_println("Ajuda indisponivel no momento.");
+    }
+}
 
 static Command comandosMotor[] = {
     {"F", cmd_motor_f, "Move ambos para frente"},

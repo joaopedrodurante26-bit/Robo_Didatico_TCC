@@ -1,0 +1,16 @@
+Comandos sensores:
+MPU READ - leituras IMU
+MPU STREAM - fluxo continuo (STOP para parar)
+ENCODER READ - pulsos dos encoders
+ENCODER RESET - zerar encoders
+ULTRA READ - estado + tempo de eco
+ULTRA DIST - distancia convertida (cm)
+ULTRA RAW - valida trigger/echo + tempo
+ULTRA STATUS - status e estatisticas basicas
+ULTRA INFO - estatisticas, timestamp, frequencia, filtro e calibracao
+ULTRA FILTER - altera o filtro: NONE, MEDIAN, MOVING, EXP
+ULTRA CAL - calibra com distancia conhecida
+ULTRA RESET - zera estatisticas
+ULTRA EXPLAIN - explica o funcionamento do HC-SR04
+ULTRA STREAM - fluxo continuo
+EXIT - voltar ao menu principal

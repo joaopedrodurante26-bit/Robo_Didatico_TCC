@@ -1,0 +1,15 @@
+MAIN - Comandos gerais
+
+HELP - Mostra ajuda
+STATUS - Estado do sistema
+VERSION - Versao do firmware
+MODE - Altera modo operacional
+REBOOT - Reinicia o ESP32
+CLEAR - Limpa o terminal
+MOTOR - Entra no menu de motores
+SENSOR - Entra no menu de sensores
+WIFI - Informacoes do WiFi
+FS - Informacoes do sistema de arquivos
+DIAG - Executa diagnostico automatico
+STOP - Interrompe streams
+UI - Mostra/altera interface

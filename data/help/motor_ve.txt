@@ -1,0 +1,3 @@
+MOTOR VE - Curva a esquerda
+
+Sintaxe: MOTOR VE <velocidade> [tempo_s]

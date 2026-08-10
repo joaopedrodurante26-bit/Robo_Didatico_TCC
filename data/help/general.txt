@@ -1,0 +1,11 @@
+Uso: HELP [OBJETO] [COMANDO]
+
+Exemplos:
+HELP ULTRA
+HELP MOTOR F
+
+Objetos disponiveis:
+MAIN   - comandos gerais do sistema
+MOTOR  - comandos de movimento
+ULTRA  - comandos do HC-SR04
+SENSOR - menu de sensores
