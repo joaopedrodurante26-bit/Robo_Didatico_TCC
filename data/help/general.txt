@@ -3,9 +3,13 @@ Uso: HELP [OBJETO] [COMANDO]
 Exemplos:
 HELP ULTRA
 HELP MOTOR F
+HELP FS
+HELP LOG
 
 Objetos disponiveis:
 MAIN   - comandos gerais do sistema
 MOTOR  - comandos de movimento
 ULTRA  - comandos do HC-SR04
 SENSOR - menu de sensores
+FS     - sistema de arquivos LittleFS
+LOG    - arquivo de log principal

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Navegador FS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app fs-app">
+    <header>
+      <h1>Robô Vespa</h1>
+      <p>Navegador do LittleFS</p>
+      <nav class="top-nav">
+        <a href="/">Console</a>
+        <a href="/control">Controle</a>
+        <a href="/monitor">Monitor</a>
+        <a href="/config">Configuração</a>
+        <a class="active" href="/fs">Arquivos</a>
+      </nav>
+    </header>
+
+    <section class="fs-hero card">
+      <div>
+        <h2>Particao LittleFS</h2>
+        <p>Explore pastas, leia arquivos e remova logs diretamente do navegador.</p>
+      </div>
+      <div class="fs-hero-badge" id="fs-status">Pronto</div>
+    </section>
+
+    <section class="fs-toolbar card">
+      <div class="fs-toolbar-main">
+        <button id="fs-up" class="secondary">Voltar</button>
+        <input id="fs-path" type="text" value="/" spellcheck="false" />
+        <button id="fs-open">Abrir</button>
+      </div>
+      <div class="fs-upload-row">
+        <input id="fs-upload-input" type="file" />
+        <button id="fs-upload-btn" class="secondary">Enviar</button>
+      </div>
+      <div id="fs-breadcrumb" class="fs-breadcrumb"></div>
+    </section>
+
+    <section class="fs-layout">
+      <div class="card fs-panel">
+        <div class="fs-panel-header">
+          <h2>Arquivos</h2>
+          <span id="fs-count">0 itens</span>
+        </div>
+        <div id="fs-list" class="fs-list"></div>
+      </div>
+
+      <div class="card fs-panel">
+        <div class="fs-panel-header">
+          <h2>Conteudo</h2>
+          <div class="fs-panel-actions">
+            <button id="fs-download" class="secondary" disabled>Baixar</button>
+            <button id="fs-copy" class="secondary" disabled>Copiar</button>
+            <button id="fs-move" class="secondary" disabled>Mover</button>
+            <button id="fs-refresh" class="secondary">Atualizar</button>
+            <button id="fs-delete" class="danger" disabled>Excluir</button>
+          </div>
+        </div>
+        <div id="fs-meta" class="fs-meta">Selecione um arquivo para visualizar.</div>
+        <pre id="fs-preview" class="fs-preview">Nada selecionado.</pre>
+      </div>
+    </section>
+  </div>
+
+  <script src="fs.js"></script>
+</body>
+</html>

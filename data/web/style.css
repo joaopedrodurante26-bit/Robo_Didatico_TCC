@@ -203,3 +203,230 @@ button {
   margin: 0 0 8px 0;
   color: #94a3b8;
 }
+
+.fs-app {
+  max-width: 1180px;
+}
+
+.fs-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.fs-hero h2 {
+  margin: 0 0 6px 0;
+  font-size: 22px;
+}
+
+.fs-hero p {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.fs-hero-badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.15);
+  color: #bfdbfe;
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  white-space: nowrap;
+}
+
+.fs-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.fs-upload-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.fs-upload-row input[type="file"] {
+  flex: 1;
+  min-width: 220px;
+  color: #cbd5e1;
+}
+
+.fs-toolbar-main {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+}
+
+.fs-toolbar-main input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #fff;
+}
+
+.secondary {
+  background: #334155;
+}
+
+.danger {
+  background: #dc2626;
+}
+
+.fs-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  color: #94a3b8;
+}
+
+.crumb {
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.crumb-sep {
+  color: #64748b;
+}
+
+.fs-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 16px;
+}
+
+.fs-panel {
+  min-height: 540px;
+}
+
+.fs-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fs-panel-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.fs-panel-header span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.fs-panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.fs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fs-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #334155;
+  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  color: #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+}
+
+.fs-item.directory {
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.fs-item.file {
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.fs-item-label {
+  font-weight: 700;
+}
+
+.fs-item-meta {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.fs-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.fs-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  color: #bfdbfe;
+  font-size: 12px;
+}
+
+.fs-empty {
+  color: #94a3b8;
+  padding: 14px 0;
+}
+
+.fs-meta {
+  color: #94a3b8;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.fs-preview {
+  margin: 0;
+  min-height: 460px;
+  max-height: 460px;
+  overflow: auto;
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .fs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .fs-toolbar-main {
+    grid-template-columns: 1fr;
+  }
+
+  .fs-upload-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fs-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

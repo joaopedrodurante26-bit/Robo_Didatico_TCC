@@ -1,0 +1,13 @@
+LOG - Log principal do firmware
+
+Comandos:
+LOG INFO - mostra tamanho e status do log
+LOG SHOW - imprime o arquivo inteiro
+LOG TAIL [linhas] - mostra as ultimas linhas
+LOG CLEAR CONFIRM - apaga e recria o arquivo
+
+Exemplos:
+LOG TAIL
+LOG TAIL 20
+LOG SHOW
+LOG CLEAR CONFIRM

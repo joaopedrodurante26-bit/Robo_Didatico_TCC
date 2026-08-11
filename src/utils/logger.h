@@ -4,6 +4,8 @@
 #include <Arduino.h>
 
 void initLogger();
+void closeLogger();
+bool reopenLogger();
 
 void logDebug(String msg);
 void logInfo(String msg);

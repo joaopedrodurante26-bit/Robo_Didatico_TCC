@@ -1,0 +1,13 @@
+FS - Sistema de arquivos LittleFS
+
+Comandos:
+FS INFO - mostra uso da particao
+FS LS [caminho] - lista arquivos e diretorios
+FS CAT <arquivo> - exibe o conteudo de um arquivo texto
+FS RM <arquivo> CONFIRM - remove um arquivo
+
+Exemplos:
+FS LS /
+FS LS /help
+FS CAT /log.txt
+FS RM /log.txt CONFIRM

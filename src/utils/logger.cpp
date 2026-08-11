@@ -2,6 +2,16 @@
 #include <LittleFS.h>
 
 static File logFile;
+static const char* LOG_PATH = "/log.txt";
+
+static bool openLogFile() {
+    if (logFile) {
+        logFile.close();
+    }
+
+    logFile = LittleFS.open(LOG_PATH, "a");
+    return (bool)logFile;
+}
 
 // =========================
 // INICIALIZAÇÃO
@@ -14,11 +24,25 @@ void initLogger() {
         return;
     }
 
-    logFile = LittleFS.open("/log.txt", "a");
-
-    if (!logFile) {
+    if (!openLogFile()) {
         Serial.println("[LOGGER] Falha ao abrir log");
     }
+}
+
+void closeLogger() {
+    if (logFile) {
+        logFile.close();
+    }
+
+    logFile = File();
+}
+
+bool reopenLogger() {
+    if (!LittleFS.begin()) {
+        return false;
+    }
+
+    return openLogFile();
 }
 
 // =========================
@@ -36,6 +60,9 @@ void escrever(String nivel, String msg) {
     if (logFile) {
         logFile.println(linha);
         logFile.flush(); // garante escrita
+    } else if (reopenLogger()) {
+        logFile.println(linha);
+        logFile.flush();
     }
 }
 

@@ -9,7 +9,20 @@ CLEAR - Limpa o terminal
 MOTOR - Entra no menu de motores
 SENSOR - Entra no menu de sensores
 WIFI - Informacoes do WiFi
-FS - Informacoes do sistema de arquivos
+FS - Navega no sistema de arquivos
+LOG - Atalhos do arquivo de log
 DIAG - Executa diagnostico automatico
 STOP - Interrompe streams
 UI - Mostra/altera interface
+
+FS SUBCOMANDOS
+FS INFO
+FS LS [caminho]
+FS CAT <arquivo>
+FS RM <arquivo> CONFIRM
+
+LOG SUBCOMANDOS
+LOG INFO
+LOG SHOW
+LOG TAIL [linhas]
+LOG CLEAR CONFIRM
