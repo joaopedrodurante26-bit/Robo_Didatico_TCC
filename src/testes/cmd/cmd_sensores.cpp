@@ -46,6 +46,7 @@ static void cmd_sensor_encoder_read(String args) {
 }
 
 static void cmd_sensor_encoder_reset(String args) { resetEncoders(); console_println("Encoders zerados."); }
+static void cmd_sensor_encoder_stream(String args) { console_startEncoderStream(); console_println("[OK] STREAM ENCODER iniciado. Use STOP, STOP STREAM ou STOP ENCODER."); }
 
 static void cmd_sensor_ultra_cal(String args) {
     String entrada = args;
@@ -202,6 +203,9 @@ static Command comandosSensor[] = {
     {"ENCODER READ", cmd_sensor_encoder_read, "Pulsos dos encoders"},
     {"READ ENCODER", cmd_sensor_encoder_read, "Pulsos dos encoders (alias)"},
     {"ENCODER RESET", cmd_sensor_encoder_reset, "Zerar encoders"},
+    {"ENCODER STREAM", cmd_sensor_encoder_stream, "Fluxo contínuo dos encoders"},
+    {"STREAM ENCODER", cmd_sensor_encoder_stream, "Fluxo contínuo dos encoders (alias)"},
+    {"STOP ENCODER", cmd_sensor_stop, "Para stream de encoders"},
     {"ULTRA CAL", cmd_sensor_ultra_cal, "Calibrar com distancia conhecida"},
     {"ULTRA INFO", cmd_sensor_ultra_info, "Estatisticas detalhadas do ultrassonico"},
     {"ULTRA FILTER", cmd_sensor_ultra_filter, "Configurar filtro do ultrassonico"},

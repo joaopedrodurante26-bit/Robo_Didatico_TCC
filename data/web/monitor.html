@@ -19,33 +19,65 @@
       </nav>
     </header>
 
-    <section class="status-panel">
-      <div class="card"><h2>Modo</h2><div id="modo">--</div></div>
-      <div class="card"><h2>Interface</h2><div id="ui">--</div></div>
-      <div class="card"><h2>Distância</h2><div id="distancia">--</div></div>
-      <div class="card"><h2>Estado</h2><div id="estado">--</div></div>
-      <div class="card"><h2>Status Ultrassônico</h2><div id="ultra-status">--</div></div>
-      <div class="card"><h2>Filtro</h2><div id="ultra-filtro">--</div></div>
-      <div class="card"><h2>Encoder Esq</h2><div id="enc-esq">--</div></div>
-      <div class="card"><h2>Encoder Dir</h2><div id="enc-dir">--</div></div>
+    <section class="monitor-section">
+      <h2 class="section-title">Visão Geral</h2>
+      <div class="status-panel">
+        <div class="card"><h3>Modo</h3><div class="metric-value" id="modo">--</div></div>
+        <div class="card"><h3>Interface</h3><div class="metric-value" id="ui">--</div></div>
+        <div class="card"><h3>Estado</h3><div class="metric-value" id="estado">--</div></div>
+        <div class="card"><h3>Distância</h3><div class="metric-value" id="distancia">--</div></div>
+      </div>
     </section>
 
-    <section class="status-panel">
-      <div class="card"><h2>Ax</h2><div id="ax">--</div></div>
-      <div class="card"><h2>Ay</h2><div id="ay">--</div></div>
-      <div class="card"><h2>Az</h2><div id="az">--</div></div>
-      <div class="card"><h2>Gx</h2><div id="gx">--</div></div>
-      <div class="card"><h2>Gy</h2><div id="gy">--</div></div>
-      <div class="card"><h2>Gz</h2><div id="gz">--</div></div>
+    <section class="monitor-section">
+      <h2 class="section-title">Encoders em Tempo Real</h2>
+      <div class="status-panel">
+        <div class="card">
+          <h3>Esquerdo</h3>
+          <div class="metric-value" id="enc-esq">--</div>
+          <div class="metric-sub" id="enc-esq-rate">-- p/s</div>
+          <div class="metric-sub" id="enc-esq-delta">Δ --</div>
+        </div>
+        <div class="card">
+          <h3>Direito</h3>
+          <div class="metric-value" id="enc-dir">--</div>
+          <div class="metric-sub" id="enc-dir-rate">-- p/s</div>
+          <div class="metric-sub" id="enc-dir-delta">Δ --</div>
+        </div>
+        <div class="card">
+          <h3>Diferença</h3>
+          <div class="metric-value" id="enc-diff">--</div>
+          <div class="metric-sub">|esq - dir| em pulsos</div>
+        </div>
+      </div>
     </section>
 
-    <section class="status-panel">
-      <div class="card"><h2>Frequência</h2><div id="ultra-hz">--</div></div>
-      <div class="card"><h2>Calibração</h2><div id="ultra-cal">--</div></div>
-      <div class="card"><h2>Última leitura</h2><div id="ultra-age">--</div></div>
-      <div class="card"><h2>Leituras válidas</h2><div id="ultra-valid">--</div></div>
-      <div class="card"><h2>Leituras totais</h2><div id="ultra-reads">--</div></div>
-      <div class="card"><h2>Qualidade</h2><div id="ultra-quality">--</div></div>
+    <section class="monitor-section">
+      <h2 class="section-title">Ultrassônico</h2>
+      <div class="status-panel">
+        <div class="card"><h3>Status</h3><div class="metric-value" id="ultra-status">--</div></div>
+        <div class="card"><h3>Filtro</h3><div class="metric-value" id="ultra-filtro">--</div></div>
+        <div class="card"><h3>Frequência</h3><div class="metric-value" id="ultra-hz">--</div></div>
+        <div class="card"><h3>Calibração</h3><div class="metric-value" id="ultra-cal">--</div></div>
+        <div class="card"><h3>Última Leitura</h3><div class="metric-value" id="ultra-age">--</div></div>
+        <div class="card"><h3>Qualidade</h3><div class="metric-value" id="ultra-quality">--</div></div>
+      </div>
+      <div class="status-panel">
+        <div class="card"><h3>Leituras Válidas</h3><div class="metric-value" id="ultra-valid">--</div></div>
+        <div class="card"><h3>Leituras Totais</h3><div class="metric-value" id="ultra-reads">--</div></div>
+      </div>
+    </section>
+
+    <section class="monitor-section">
+      <h2 class="section-title">IMU (MPU)</h2>
+      <div class="status-panel">
+        <div class="card"><h3>Ax</h3><div class="metric-value" id="ax">--</div></div>
+        <div class="card"><h3>Ay</h3><div class="metric-value" id="ay">--</div></div>
+        <div class="card"><h3>Az</h3><div class="metric-value" id="az">--</div></div>
+        <div class="card"><h3>Gx</h3><div class="metric-value" id="gx">--</div></div>
+        <div class="card"><h3>Gy</h3><div class="metric-value" id="gy">--</div></div>
+        <div class="card"><h3>Gz</h3><div class="metric-value" id="gz">--</div></div>
+      </div>
     </section>
   </div>
 

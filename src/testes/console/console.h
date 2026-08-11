@@ -34,6 +34,7 @@ void console_setSensorCommands(Command* tabela, size_t tamanho);
 void console_setState(ConsoleState s);
 void console_startMpuStream();
 void console_startUltraStream();
+void console_startEncoderStream();
 void console_stopStreams();
 
 // Força reimpressão do prompt (útil após saída das rotinas)

@@ -26,6 +26,7 @@ static String lineBuffer = "";
 // Streams
 static bool mpuStream = false;
 static bool ultraStream = false;
+static bool encoderStream = false;
 static unsigned long lastStreamMillis = 0;
 
 // Console web
@@ -58,7 +59,8 @@ void console_setState(ConsoleState s) {
 
 void console_startMpuStream() { mpuStream = true; lastStreamMillis = millis(); }
 void console_startUltraStream() { ultraStream = true; lastStreamMillis = millis(); }
-void console_stopStreams() { mpuStream = false; ultraStream = false; }
+void console_startEncoderStream() { encoderStream = true; lastStreamMillis = millis(); }
+void console_stopStreams() { mpuStream = false; ultraStream = false; encoderStream = false; }
 
 void console_printPrompt() { printPrompt(); }
 
@@ -367,5 +369,12 @@ void console_loop() {
         } else {
             console_println("N/A");
         }
+    }
+
+    if (encoderStream && millis() - lastStreamMillis > 200) {
+        lastStreamMillis = millis();
+        console_println("Encoder");
+        console_println("Esquerdo = " + String(getPulsosEsq()));
+        console_println("Direito = " + String(getPulsosDir()));
     }
 }
