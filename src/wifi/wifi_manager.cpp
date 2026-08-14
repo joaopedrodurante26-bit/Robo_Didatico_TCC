@@ -141,6 +141,22 @@ static String buildWifiDiagnosticsJson() {
     return json;
 }
 
+static void resetWifiDiagnosticsState() {
+    wifiFailStreak = 0;
+    wifiRecoveryCount = 0;
+    wifiRecoveryAttempts = 0;
+    wifiHealthChecks = 0;
+    wifiHealthCheckFailures = 0;
+    wifiLastHealthyMs = 0;
+    wifiLastUnhealthyMs = 0;
+    wifiLastRecoveryAttemptMs = 0;
+    wifiLastRecoverySuccessMs = 0;
+    wifiLastApStartAttemptMs = 0;
+    wifiLastApStartSuccessMs = 0;
+    wifiLastApStartFailureMs = 0;
+    wifiLastFault = "startup_pending";
+}
+
 static bool isAccessPointHealthy() {
     wifi_mode_t mode = WiFi.getMode();
     if (mode != WIFI_MODE_AP && mode != WIFI_MODE_APSTA) {
@@ -990,6 +1006,8 @@ static void configurarRotas() {
 void initWiFi() {
     logInfo("WIFI: Iniciando modo Access Point...");
 
+    resetWifiDiagnosticsState();
+
     bool apOk = iniciarAccessPointComValidacao(3, true);
     if (!apOk) {
         wifiLastFault = "init_ap_failed";
@@ -1080,4 +1098,49 @@ void atualizarWiFi() {
     }
 
     server.handleClient();
+}
+
+bool wifiRecoverNow() {
+    wifiRecoveryAttempts++;
+    wifiRecoveryInProgress = true;
+    wifiLastRecoveryAttemptMs = millis();
+
+    bool recovered = iniciarAccessPointComValidacao(3, true);
+
+    wifiRecoveryInProgress = false;
+    lastWifiRecoveryMs = millis();
+
+    if (recovered) {
+        wifiRecoveryCount++;
+        wifiLastRecoverySuccessMs = millis();
+        wifiLastFault = "none";
+        return true;
+    }
+
+    wifiLastFault = "manual_recovery_failed";
+    return false;
+}
+
+void wifiResetDiagnostics() {
+    bool keepHealthy = isAccessPointHealthy();
+    resetWifiDiagnosticsState();
+    wifiApHealthy = keepHealthy;
+    wifiRecoveryInProgress = false;
+
+    if (keepHealthy) {
+        wifiLastHealthyMs = millis();
+        wifiLastFault = "none";
+    }
+}
+
+bool wifiIsApHealthy() {
+    return isAccessPointHealthy();
+}
+
+String wifiGetHealthLabel() {
+    return String(wifiHealthToString());
+}
+
+String wifiGetDiagnosticsJson() {
+    return buildWifiDiagnosticsJson();
 }

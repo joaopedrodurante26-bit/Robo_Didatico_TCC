@@ -17,6 +17,8 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
+#include <Arduino.h>
+
 // =====================================================
 // INICIALIZAÇÃO E LOOP
 // =====================================================
@@ -41,5 +43,14 @@ void initWiFi();
 // - Manter conexão ativa
 //
 void atualizarWiFi();
+
+// -----------------------------------------------------
+// Diagnostico / gerenciamento do AP
+// -----------------------------------------------------
+bool wifiRecoverNow();
+void wifiResetDiagnostics();
+bool wifiIsApHealthy();
+String wifiGetHealthLabel();
+String wifiGetDiagnosticsJson();
 
 #endif

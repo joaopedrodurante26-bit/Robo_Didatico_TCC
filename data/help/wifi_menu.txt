@@ -1,0 +1,14 @@
+Comandos WIFI:
+STATUS - resumo do AP (SSID, IP, clientes, saude)
+INFO - alias de STATUS
+SCAN [max] - varre redes proximas (padrao 10, max 30)
+PING [host|ip] [porta] - teste de alcance TCP (padrao IP do AP e porta 80)
+CLIENTS - quantidade de clientes conectados
+IP - mostra o IP atual do AP
+SSID - mostra o SSID atual
+DIAG - imprime JSON completo de diagnostico
+RECOVER - forca recuperacao do AP
+RESTART - alias de RECOVER
+RESET DIAG - zera contadores de diagnostico
+HELP - mostra esta ajuda
+EXIT - volta ao menu principal

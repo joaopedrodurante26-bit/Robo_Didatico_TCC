@@ -16,7 +16,8 @@ struct Command {
 enum ConsoleState {
     STATE_MAIN,
     STATE_MOTOR,
-    STATE_SENSOR
+    STATE_SENSOR,
+    STATE_WIFI
 };
 
 // Inicializa o console (imprime boot/status)
@@ -29,6 +30,7 @@ void console_loop();
 void console_setMainCommands(Command* tabela, size_t tamanho);
 void console_setMotorCommands(Command* tabela, size_t tamanho);
 void console_setSensorCommands(Command* tabela, size_t tamanho);
+void console_setWifiCommands(Command* tabela, size_t tamanho);
 
 // Funções auxiliares utilizadas por módulos de comando
 void console_setState(ConsoleState s);

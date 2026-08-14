@@ -16,7 +16,7 @@ static void cmd_clear(String args);
 static void cmd_mode(String args);
 static void cmd_enter_motor(String args);
 static void cmd_enter_sensor(String args);
-static void cmd_wifi(String args);
+static void cmd_enter_wifi(String args);
 static void cmd_fs(String args);
 static void cmd_diag(String args);
 static void cmd_stop(String args);
@@ -129,7 +129,7 @@ Command* getMainCommands(size_t &count) {
         {"SYSTEM CLEAR", cmd_clear, "Limpa o terminal (alias)"},
         {"MOTOR", cmd_enter_motor, "Menu dos motores"},
         {"SENSOR", cmd_enter_sensor, "Menu dos sensores"},
-        {"WIFI", cmd_wifi, "Informações do WiFi"},
+        {"WIFI", cmd_enter_wifi, "Menu do WiFi"},
         {"FS", cmd_fs, "Navega no LittleFS"},
         {"LOG", cmd_log, "Atalhos do arquivo de log"},
         {"DIAG", cmd_diag, "Executa diagnóstico automático"},
@@ -174,6 +174,11 @@ static void cmd_help_main(String args) {
 
     if (objeto == "SENSOR") {
         printHelpFile("/help/sensor.txt");
+        return;
+    }
+
+    if (objeto == "WIFI") {
+        printHelpFile("/help/wifi.txt");
         return;
     }
 
@@ -253,18 +258,10 @@ static void cmd_enter_sensor(String args) {
     console_println("Entrando no menu de sensores...");
 }
 
-static void cmd_wifi(String args) {
-    console_println("WIFI STATUS");
-    console_println("");
-    console_println("SSID");
-    console_println(WiFi.softAPgetStationNum() ? String("ROBO_VESPA") : String("ROBO_VESPA"));
-    console_println("");
-    console_println("IP");
-    console_println(WiFi.softAPIP().toString());
-    console_println("");
-    console_println("Clientes");
-    console_println("");
-    console_println(String(WiFi.softAPgetStationNum()) + " conectado(s)");
+static void cmd_enter_wifi(String args) {
+    console_setState(STATE_WIFI);
+    console_println("Entrando no menu WiFi...");
+    console_println("Use HELP para listar os comandos de rede.");
 }
 
 static void cmd_fs(String args) {

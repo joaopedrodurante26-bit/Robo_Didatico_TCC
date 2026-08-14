@@ -1,0 +1,14 @@
+WIFI - Rede e diagnostico do Access Point
+
+Comandos rapidos no menu principal:
+WIFI - entra no submenu WIFI
+WIFI STATUS - resumo de SSID, IP, clientes e saude
+WIFI SCAN [max] - varre redes proximas
+WIFI PING [host|ip] [porta] - teste de alcance TCP
+WIFI DIAG - diagnostico detalhado em JSON
+WIFI RECOVER - tenta recriar o AP imediatamente
+WIFI RESET DIAG - zera contadores de diagnostico
+
+Dica:
+Use WIFI para entrar no prompt WIFI> e executar os comandos sem prefixo.
+Exemplo: WIFI> STATUS

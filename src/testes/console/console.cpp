@@ -19,6 +19,9 @@ static size_t motorTableSize = 0;
 static Command* sensorTable = nullptr;
 static size_t sensorTableSize = 0;
 
+static Command* wifiTable = nullptr;
+static size_t wifiTableSize = 0;
+
 // Estado e buffers
 static ConsoleState state = STATE_MAIN;
 static String lineBuffer = "";
@@ -51,6 +54,11 @@ void console_setMotorCommands(Command* tabela, size_t tamanho) {
 void console_setSensorCommands(Command* tabela, size_t tamanho) {
     sensorTable = tabela;
     sensorTableSize = tamanho;
+}
+
+void console_setWifiCommands(Command* tabela, size_t tamanho) {
+    wifiTable = tabela;
+    wifiTableSize = tamanho;
 }
 
 void console_setState(ConsoleState s) {
@@ -199,6 +207,7 @@ static void printPrompt() {
         case STATE_MAIN: prompt = "ROBO> "; break;
         case STATE_MOTOR: prompt = "MOTOR> "; break;
         case STATE_SENSOR: prompt = "SENSOR> "; break;
+        case STATE_WIFI: prompt = "WIFI> "; break;
     }
     Serial.print(prompt);
     console_appendWebLine(prompt);
@@ -285,6 +294,15 @@ static void executarComando(String cmd) {
         }
     }
 
+    if (up.startsWith("WIFI ")) {
+        String sub = linha.substring(5);
+        sub.trim();
+        if (sub.length() > 0 && executarComandoDaTabela(wifiTable, wifiTableSize, sub)) {
+            printPrompt();
+            return;
+        }
+    }
+
     if (up.startsWith("SYSTEM ")) {
         if (executarComandoDaTabela(mainTable, mainTableSize, linha)) {
             printPrompt();
@@ -304,13 +322,17 @@ static void executarComando(String cmd) {
         case STATE_SENSOR:
             executado = executarComandoDaTabela(sensorTable, sensorTableSize, linha);
             break;
+        case STATE_WIFI:
+            executado = executarComandoDaTabela(wifiTable, wifiTableSize, linha);
+            break;
     }
 
     // Fallback global: se não reconhecer no estado atual, tenta nas outras tabelas.
     if (!executado) {
         executado = executarComandoDaTabela(mainTable, mainTableSize, linha)
             || executarComandoDaTabela(motorTable, motorTableSize, linha)
-            || executarComandoDaTabela(sensorTable, sensorTableSize, linha);
+            || executarComandoDaTabela(sensorTable, sensorTableSize, linha)
+            || executarComandoDaTabela(wifiTable, wifiTableSize, linha);
     }
 
     if (!executado) {

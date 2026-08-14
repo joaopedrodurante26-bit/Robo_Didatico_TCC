@@ -8,7 +8,7 @@ REBOOT - Reinicia o ESP32
 CLEAR - Limpa o terminal
 MOTOR - Entra no menu de motores
 SENSOR - Entra no menu de sensores
-WIFI - Informacoes do WiFi
+WIFI - Entra no menu de rede e diagnostico
 FS - Navega no sistema de arquivos
 LOG - Atalhos do arquivo de log
 DIAG - Executa diagnostico automatico
@@ -26,3 +26,9 @@ LOG INFO
 LOG SHOW
 LOG TAIL [linhas]
 LOG CLEAR CONFIRM
+
+WIFI SUBCOMANDOS
+WIFI STATUS
+WIFI DIAG
+WIFI RECOVER
+WIFI RESET DIAG
