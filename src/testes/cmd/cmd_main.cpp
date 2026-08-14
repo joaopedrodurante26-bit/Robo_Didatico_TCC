@@ -39,6 +39,24 @@ static String upTrim(String s) {
     return s;
 }
 
+static void splitCommandVerbAndArgs(const String& text, String& verb, String& args) {
+    String input = text;
+    input.trim();
+
+    int separator = input.indexOf(' ');
+    if (separator < 0) {
+        verb = input;
+        args = "";
+        verb.toUpperCase();
+        return;
+    }
+
+    verb = input.substring(0, separator);
+    args = input.substring(separator + 1);
+    args.trim();
+    verb.toUpperCase();
+}
+
 static String headToken(const String& text) {
     String s = text;
     s.trim();
@@ -250,7 +268,8 @@ static void cmd_wifi(String args) {
 }
 
 static void cmd_fs(String args) {
-    String entrada = upTrim(args);
+    String entrada = args;
+    entrada.trim();
 
     if (entrada.length() == 0 || entrada == "INFO") {
         if (!ensureLittleFsMounted()) {
@@ -271,8 +290,9 @@ static void cmd_fs(String args) {
         return;
     }
 
-    String comando = headToken(entrada);
-    String restante = tailToken(entrada);
+    String comando;
+    String restante;
+    splitCommandVerbAndArgs(entrada, comando, restante);
 
     if (comando == "LS" || comando == "LIST") {
         listFsPath(restante);
@@ -291,7 +311,8 @@ static void cmd_fs(String args) {
 
     if (comando == "RM" || comando == "DEL" || comando == "DELETE") {
         String target = headToken(restante);
-        String confirm = upTrim(tailToken(restante));
+        String confirm = tailToken(restante);
+        confirm.toUpperCase();
 
         if (target.length() == 0 || confirm != "CONFIRM") {
             console_println("Para apagar um arquivo use: FS RM <arquivo> CONFIRM");
@@ -347,7 +368,8 @@ static void cmd_fs(String args) {
 }
 
 static void cmd_log(String args) {
-    String entrada = upTrim(args);
+    String entrada = args;
+    entrada.trim();
 
     if (entrada.length() == 0 || entrada == "INFO") {
         if (!ensureLittleFsMounted()) {
@@ -370,8 +392,9 @@ static void cmd_log(String args) {
         return;
     }
 
-    String comando = headToken(entrada);
-    String restante = tailToken(entrada);
+    String comando;
+    String restante;
+    splitCommandVerbAndArgs(entrada, comando, restante);
 
     if (comando == "SHOW" || comando == "CAT" || comando == "OPEN") {
         printFileContents(LOG_FILE_PATH);
@@ -385,7 +408,10 @@ static void cmd_log(String args) {
     }
 
     if (comando == "CLEAR" || comando == "DEL" || comando == "DELETE") {
-        if (upTrim(restante) != "CONFIRM") {
+        String confirm = restante;
+        confirm.toUpperCase();
+
+        if (confirm != "CONFIRM") {
             console_println("Para limpar o log use: LOG CLEAR CONFIRM");
             return;
         }
