@@ -7,7 +7,9 @@
 
 #include "../../sensores/sensores.h"
 #include "../../sensores/sensor_manager.h"
+#include "../../robot/robot.h"
 #include "../../utils/logger.h"
+#include "../../wifi/wifi_manager.h"
 
 // Tabelas registradas
 static Command* mainTable = nullptr;
@@ -31,6 +33,11 @@ static bool mpuStream = false;
 static bool ultraStream = false;
 static bool encoderStream = false;
 static unsigned long lastStreamMillis = 0;
+
+// Watch mode
+static bool watchEnabled = false;
+static String watchTarget = "ALL";
+static unsigned long lastWatchMillis = 0;
 
 // Console web
 static String webConsoleBuffer = "";
@@ -69,6 +76,18 @@ void console_startMpuStream() { mpuStream = true; lastStreamMillis = millis(); }
 void console_startUltraStream() { ultraStream = true; lastStreamMillis = millis(); }
 void console_startEncoderStream() { encoderStream = true; lastStreamMillis = millis(); }
 void console_stopStreams() { mpuStream = false; ultraStream = false; encoderStream = false; }
+void console_startWatch(const String& target) {
+    watchEnabled = true;
+    watchTarget = target.length() > 0 ? target : "ALL";
+    watchTarget.toUpperCase();
+    lastWatchMillis = millis();
+}
+void console_stopWatch() {
+    watchEnabled = false;
+    watchTarget = "ALL";
+}
+bool console_isWatchEnabled() { return watchEnabled; }
+String console_getWatchTarget() { return watchTarget; }
 
 void console_printPrompt() { printPrompt(); }
 
@@ -398,5 +417,34 @@ void console_loop() {
         console_println("Encoder");
         console_println("Esquerdo = " + String(getPulsosEsq()));
         console_println("Direito = " + String(getPulsosDir()));
+    }
+
+    if (watchEnabled && millis() - lastWatchMillis > 2000) {
+        lastWatchMillis = millis();
+        console_println("=== WATCH " + watchTarget + " ===");
+
+        if (watchTarget == "ALL" || watchTarget == "SYSTEM") {
+            console_println("Modo..............: " + String(robotModeToString(getCurrentMode())));
+            console_println("Interface.........: " + String(interfaceModeToString(getInterfaceMode())));
+            console_println("Heap livre........: " + String(ESP.getFreeHeap()) + " bytes");
+            console_println("Uptime............: " + String(millis() / 1000) + " s");
+        }
+
+        if (watchTarget == "ALL" || watchTarget == "SENSOR") {
+            console_println("MPU accel.........: " + String(getAccelX(), 2) + ", " + String(getAccelY(), 2) + ", " + String(getAccelZ(), 2) + " g");
+            console_println("MPU gyro..........: " + String(getGyroX(), 2) + ", " + String(getGyroY(), 2) + ", " + String(getGyroZ(), 2) + " deg/s");
+            console_println("Encoders..........: E=" + String(getPulsosEsq()) + " D=" + String(getPulsosDir()));
+        }
+
+        if (watchTarget == "ALL" || watchTarget == "MOTOR") {
+            console_println("Motor status......: monitorando via watchdog do console");
+        }
+
+        if (watchTarget == "ALL" || watchTarget == "WIFI") {
+            console_println("WiFi health.......: " + wifiGetHealthLabel());
+            console_println("Clientes AP.......: " + String(WiFi.softAPgetStationNum()));
+        }
+
+        console_println("====================");
     }
 }

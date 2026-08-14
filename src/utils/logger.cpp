@@ -4,6 +4,18 @@
 static File logFile;
 static const char* LOG_PATH = "/log.txt";
 
+static String formatTimestamp(unsigned long ms) {
+    unsigned long totalSeconds = ms / 1000UL;
+    unsigned int hours = (unsigned int)(totalSeconds / 3600UL);
+    unsigned int minutes = (unsigned int)((totalSeconds % 3600UL) / 60UL);
+    unsigned int seconds = (unsigned int)(totalSeconds % 60UL);
+    unsigned int millisPart = (unsigned int)(ms % 1000UL);
+
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "%02u:%02u:%02u.%03u", hours, minutes, seconds, millisPart);
+    return String(buffer);
+}
+
 static bool openLogFile() {
     if (logFile) {
         logFile.close();
@@ -50,7 +62,7 @@ bool reopenLogger() {
 // =========================
 
 void escrever(String nivel, String msg) {
-    String ts = String(millis() / 1000.0f, 3);
+    String ts = formatTimestamp(millis());
     String linha = "[" + ts + "] [" + nivel + "] " + msg;
 
     // Serial

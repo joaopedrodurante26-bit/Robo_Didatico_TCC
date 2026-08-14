@@ -2,9 +2,14 @@
 
 #include <LittleFS.h>
 #include <WiFi.h>
+#include <ArduinoJson.h>
 #include "../../diagnostico/diagnostico.h"
 #include "../../robot/robot.h"
 #include "../../config/configuracao.h"
+#include "../../sensores/sensores.h"
+#include "../../sensores/sensor_manager.h"
+#include "../../motores/motores.h"
+#include "../../wifi/wifi_manager.h"
 #include "../../utils/logger.h"
 
 // Protótipos locais das funções de comando
@@ -22,8 +27,37 @@ static void cmd_diag(String args);
 static void cmd_stop(String args);
 static void cmd_ui(String args);
 static void cmd_log(String args);
+static void cmd_watch(String args);
+static void cmd_config(String args);
+static void cmd_run(String args);
 static const char* LOG_FILE_PATH = "/log.txt";
+static const char* CONFIG_FILE_PATH = "/robot_config.json";
 static const uint16_t LOG_TAIL_MAX_LINES = 40;
+
+struct RuntimeConfig {
+    String wifiSsid;
+    String wifiPass;
+    int motorPwmMin;
+    int motorPwmMax;
+    float ultraCalibrationFactor;
+};
+
+static RuntimeConfig systemConfig = {
+    "ROBO_TCC",
+    "12345678",
+    PWM_MIN,
+    PWM_MAX,
+    1.0f
+};
+
+static void printStatusFull(bool detailed);
+static void printSensorStatus(void);
+static void printMotorStatus(void);
+static void printWifiStatus(void);
+static void printConfigUsage(void);
+static void printConfigValues(void);
+static bool loadSystemConfigFromFile();
+static bool saveSystemConfigToFile();
 static bool ensureLittleFsMounted();
 static String normalizeFsPath(String path);
 static uint16_t parseLineCount(const String& value, uint16_t defaultValue);
@@ -134,6 +168,10 @@ Command* getMainCommands(size_t &count) {
         {"LOG", cmd_log, "Atalhos do arquivo de log"},
         {"DIAG", cmd_diag, "Executa diagnóstico automático"},
         {"STOP", cmd_stop, "Interrompe streams de sensores"},
+        {"WATCH", cmd_watch, "Ativa monitoramento em tempo real"},
+        {"RUN", cmd_run, "Executa rotina de manutenção ou diagnóstico"},
+        {"CONFIG", cmd_config, "Exibe e ajusta configuração do sistema"},
+        {"SYSTEM CONFIG", cmd_config, "Configuração do sistema (alias)"},
         {"UI", cmd_ui, "Mostra/altera interface: CONSOLE, CONTROL, MONITOR, CONFIG"},
     };
 
@@ -196,11 +234,85 @@ static void cmd_help_main(String args) {
     console_println("Use HELP para ver os objetos disponíveis.");
 }
 
+static void printStatusFull(bool detailed) {
+    console_println("=== STATUS DO SISTEMA ===");
+    console_println("Modo..............: " + String(robotModeToString(getCurrentMode())));
+    console_println("Interface.........: " + String(interfaceModeToString(getInterfaceMode())));
+    console_println("Heap livre........: " + String(ESP.getFreeHeap()) + " bytes");
+    console_println("Uptime............: " + String(millis() / 1000) + " s");
+
+    if (detailed) {
+        console_println("WiFi health.......: " + wifiGetHealthLabel());
+        console_println("Clientes WiFi.....: " + String(WiFi.softAPgetStationNum()));
+        console_println("MPU accel.........: " + String(getAccelX(), 2) + ", " + String(getAccelY(), 2) + ", " + String(getAccelZ(), 2) + " g");
+        console_println("MPU gyro..........: " + String(getGyroX(), 2) + ", " + String(getGyroY(), 2) + ", " + String(getGyroZ(), 2) + " deg/s");
+        console_println("Encoders..........: E=" + String(getPulsosEsq()) + " D=" + String(getPulsosDir()));
+        console_println("Ultrassonico......: " + String(isUltraDistanceValid() ? getUltraDistanceCm() : 0.0f, 1) + " cm");
+    }
+
+    console_println("========================");
+}
+
+static void printSensorStatus() {
+    console_println("=== SENSOR STATUS ===");
+    console_println("MPU accel.........: " + String(getAccelX(), 2) + ", " + String(getAccelY(), 2) + ", " + String(getAccelZ(), 2) + " g");
+    console_println("MPU gyro..........: " + String(getGyroX(), 2) + ", " + String(getGyroY(), 2) + ", " + String(getGyroZ(), 2) + " deg/s");
+    console_println("Encoders..........: E=" + String(getPulsosEsq()) + " D=" + String(getPulsosDir()));
+    console_println("Ultra.............: " + String(isUltraDistanceValid() ? getUltraDistanceCm() : 0.0f, 1) + " cm");
+    console_println("====================");
+}
+
+static void printMotorStatus() {
+    console_println("=== MOTOR STATUS ===");
+    console_println("PWM min...........: " + String(PWM_MIN));
+    console_println("PWM max...........: " + String(PWM_MAX));
+    console_println("Modo atual........: " + String(robotModeToString(getCurrentMode())));
+    console_println("====================");
+}
+
+static void printWifiStatus() {
+    console_println("=== WIFI STATUS ===");
+    console_println("SSID..............: " + WiFi.softAPSSID());
+    console_println("IP................: " + WiFi.softAPIP().toString());
+    console_println("Clientes..........: " + String(WiFi.softAPgetStationNum()));
+    console_println("Saude.............: " + wifiGetHealthLabel());
+    console_println("====================");
+}
+
 static void cmd_status(String args) {
-    console_println("Sistema: OK");
-    console_println("Modo atual: " + String(robotModeToString(getCurrentMode())));
-    console_println("Interface atual: " + String(interfaceModeToString(getInterfaceMode())));
-    console_println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
+    String entrada = args;
+    entrada.trim();
+    entrada.toUpperCase();
+
+    if (entrada.length() == 0) {
+        console_println("Sistema: OK");
+        console_println("Modo atual: " + String(robotModeToString(getCurrentMode())));
+        console_println("Interface atual: " + String(interfaceModeToString(getInterfaceMode())));
+        console_println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
+        return;
+    }
+
+    if (entrada == "FULL" || entrada == "DETAIL" || entrada == "ALL") {
+        printStatusFull(true);
+        return;
+    }
+
+    if (entrada == "SENSOR") {
+        printSensorStatus();
+        return;
+    }
+
+    if (entrada == "MOTOR") {
+        printMotorStatus();
+        return;
+    }
+
+    if (entrada == "WIFI") {
+        printWifiStatus();
+        return;
+    }
+
+    console_println("STATUS inválido. Use: STATUS, STATUS FULL, STATUS SENSOR, STATUS MOTOR ou STATUS WIFI.");
 }
 
 static void cmd_version(String args) {
@@ -404,6 +516,62 @@ static void cmd_log(String args) {
         return;
     }
 
+    if (comando == "FILTER" || comando == "SEARCH") {
+        if (restante.length() == 0) {
+            console_println("Para filtrar use: LOG FILTER <texto>");
+            return;
+        }
+
+        if (!ensureLittleFsMounted()) {
+            return;
+        }
+
+        File file = LittleFS.open(LOG_FILE_PATH, "r");
+        if (!file) {
+            console_println("Log nao encontrado em /log.txt");
+            return;
+        }
+
+        String texto = restante;
+        texto.trim();
+        texto.toUpperCase();
+
+        console_println("Resultados do filtro: " + restante);
+        bool found = false;
+        String line = "";
+        while (file.available()) {
+            char c = (char)file.read();
+            if (c == '\r') continue;
+            if (c == '\n') {
+                String upperLine = line;
+                upperLine.toUpperCase();
+                if (upperLine.indexOf(texto) >= 0) {
+                    console_println(line);
+                    found = true;
+                }
+                line = "";
+                continue;
+            }
+            line += c;
+        }
+
+        if (line.length() > 0) {
+            String upperLine = line;
+            upperLine.toUpperCase();
+            if (upperLine.indexOf(texto) >= 0) {
+                console_println(line);
+                found = true;
+            }
+        }
+
+        if (!found) {
+            console_println("Nenhuma linha corresponde ao filtro.");
+        }
+
+        file.close();
+        return;
+    }
+
     if (comando == "CLEAR" || comando == "DEL" || comando == "DELETE") {
         String confirm = restante;
         confirm.toUpperCase();
@@ -477,6 +645,317 @@ static void cmd_ui(String args) {
     console_println("[OK] Interface selecionada: " + String(interfaceModeToString(getInterfaceMode())));
 }
 
+static void cmd_watch(String args) {
+    String entrada = args;
+    entrada.trim();
+    entrada.toUpperCase();
+
+    if (entrada.length() == 0) {
+        entrada = "ALL";
+    }
+
+    if (entrada == "STOP" || entrada == "OFF" || entrada == "DISABLE") {
+        console_stopWatch();
+        console_println("[OK] WATCH desativado.");
+        return;
+    }
+
+    if (entrada == "ALL" || entrada == "SYSTEM" || entrada == "SENSOR" || entrada == "MOTOR" || entrada == "WIFI") {
+        console_startWatch(entrada);
+        console_println("[OK] WATCH ativo para " + entrada + ".");
+        return;
+    }
+
+    console_println("Uso: WATCH [ALL|SYSTEM|SENSOR|MOTOR|WIFI|STOP]");
+}
+
+static void printConfigUsage() {
+    console_println("Uso do CONFIG:");
+    console_println("CONFIG SHOW");
+    console_println("CONFIG SAVE");
+    console_println("CONFIG LOAD");
+    console_println("CONFIG GET <GRUPO> <CHAVE>");
+    console_println("CONFIG SET <GRUPO> <CHAVE> <VALOR>");
+    console_println("CONFIG RESET");
+}
+
+static bool loadSystemConfigFromFile() {
+    if (!ensureLittleFsMounted()) {
+        return false;
+    }
+
+    File file = LittleFS.open(CONFIG_FILE_PATH, "r");
+    if (!file) {
+        return false;
+    }
+
+    StaticJsonDocument<256> doc;
+    DeserializationError err = deserializeJson(doc, file);
+    file.close();
+
+    if (err) {
+        return false;
+    }
+
+    if (doc.containsKey("wifi_ssid")) {
+        systemConfig.wifiSsid = doc["wifi_ssid"].as<String>();
+    }
+
+    if (doc.containsKey("wifi_password")) {
+        systemConfig.wifiPass = doc["wifi_password"].as<String>();
+    }
+
+    if (doc.containsKey("motor_pwm_min")) {
+        systemConfig.motorPwmMin = doc["motor_pwm_min"].as<int>();
+    }
+
+    if (doc.containsKey("motor_pwm_max")) {
+        systemConfig.motorPwmMax = doc["motor_pwm_max"].as<int>();
+    }
+
+    if (doc.containsKey("ultra_factor")) {
+        systemConfig.ultraCalibrationFactor = doc["ultra_factor"].as<float>();
+    }
+
+    return true;
+}
+
+static bool saveSystemConfigToFile() {
+    if (!ensureLittleFsMounted()) {
+        return false;
+    }
+
+    StaticJsonDocument<256> doc;
+    doc["wifi_ssid"] = systemConfig.wifiSsid;
+    doc["wifi_password"] = systemConfig.wifiPass;
+    doc["motor_pwm_min"] = systemConfig.motorPwmMin;
+    doc["motor_pwm_max"] = systemConfig.motorPwmMax;
+    doc["ultra_factor"] = systemConfig.ultraCalibrationFactor;
+
+    File file = LittleFS.open(CONFIG_FILE_PATH, "w");
+    if (!file) {
+        return false;
+    }
+
+    bool ok = serializeJson(doc, file) > 0;
+    file.close();
+    return ok;
+}
+
+static void printConfigValues() {
+    console_println("=== CONFIGURAÇÃO ATUAL ===");
+    console_println("WiFi SSID.........: " + systemConfig.wifiSsid);
+    console_println("WiFi Password.....: " + systemConfig.wifiPass);
+    console_println("PWM Min...........: " + String(systemConfig.motorPwmMin));
+    console_println("PWM Max...........: " + String(systemConfig.motorPwmMax));
+    console_println("Ultra factor......: " + String(systemConfig.ultraCalibrationFactor, 4));
+    console_println("Arquivo...........: " + String(CONFIG_FILE_PATH));
+    console_println("=========================");
+}
+
+static void cmd_config(String args) {
+    String entrada = args;
+    entrada.trim();
+
+    if (entrada.length() == 0 || entrada.equalsIgnoreCase("SHOW") || entrada.equalsIgnoreCase("INFO")) {
+        printConfigValues();
+        return;
+    }
+
+    String verb;
+    String restante;
+    splitCommandVerbAndArgs(entrada, verb, restante);
+    verb.toUpperCase();
+
+    if (verb == "LOAD") {
+        if (loadSystemConfigFromFile()) {
+            console_println("[OK] Configuração carregada de " + String(CONFIG_FILE_PATH));
+        } else {
+            console_println("[WARN] Arquivo de configuração não encontrado ou inválido.");
+        }
+        return;
+    }
+
+    if (verb == "SAVE") {
+        if (saveSystemConfigToFile()) {
+            console_println("[OK] Configuração salva em " + String(CONFIG_FILE_PATH));
+        } else {
+            console_println("[ERROR] Falha ao salvar configuração.");
+        }
+        return;
+    }
+
+    if (verb == "RESET" || verb == "DEFAULT") {
+        systemConfig.wifiSsid = "ROBO_TCC";
+        systemConfig.wifiPass = "12345678";
+        systemConfig.motorPwmMin = PWM_MIN;
+        systemConfig.motorPwmMax = PWM_MAX;
+        systemConfig.ultraCalibrationFactor = 1.0f;
+        if (saveSystemConfigToFile()) {
+            console_println("[OK] Configuração resetada para defaults e salva.");
+        } else {
+            console_println("[OK] Configuração resetada para defaults.");
+        }
+        return;
+    }
+
+    if (verb == "GET") {
+        String grupo = headToken(restante);
+        String chave = tailToken(restante);
+        grupo.toUpperCase();
+        chave.toUpperCase();
+
+        if (grupo == "WIFI" && chave == "SSID") {
+            console_println("WIFI SSID = " + systemConfig.wifiSsid);
+            return;
+        }
+
+        if (grupo == "WIFI" && chave == "PASSWORD") {
+            console_println("WIFI PASSWORD = " + systemConfig.wifiPass);
+            return;
+        }
+
+        if (grupo == "MOTOR" && chave == "PWMMIN") {
+            console_println("MOTOR PWM_MIN = " + String(systemConfig.motorPwmMin));
+            return;
+        }
+
+        if (grupo == "MOTOR" && chave == "PWMMAX") {
+            console_println("MOTOR PWM_MAX = " + String(systemConfig.motorPwmMax));
+            return;
+        }
+
+        if (grupo == "ULTRA" && chave == "FACTOR") {
+            console_println("ULTRA FACTOR = " + String(systemConfig.ultraCalibrationFactor, 4));
+            return;
+        }
+
+        console_println("Chave de configuração não reconhecida.");
+        printConfigUsage();
+        return;
+    }
+
+    if (verb == "SET") {
+        String grupo = headToken(restante);
+        String rest2 = tailToken(restante);
+        String chave = headToken(rest2);
+        String valor = tailToken(rest2);
+        grupo.toUpperCase();
+        chave.toUpperCase();
+
+        if (grupo == "WIFI" && chave == "SSID") {
+            systemConfig.wifiSsid = valor;
+            saveSystemConfigToFile();
+            console_println("[OK] WIFI SSID atualizado para: " + systemConfig.wifiSsid);
+            return;
+        }
+
+        if (grupo == "WIFI" && chave == "PASSWORD") {
+            systemConfig.wifiPass = valor;
+            saveSystemConfigToFile();
+            console_println("[OK] WIFI PASSWORD atualizado.");
+            return;
+        }
+
+        if (grupo == "MOTOR" && chave == "PWMMIN") {
+            systemConfig.motorPwmMin = valor.toInt();
+            saveSystemConfigToFile();
+            console_println("[OK] PWM_MIN atualizado para: " + String(systemConfig.motorPwmMin));
+            return;
+        }
+
+        if (grupo == "MOTOR" && chave == "PWMMAX") {
+            systemConfig.motorPwmMax = valor.toInt();
+            saveSystemConfigToFile();
+            console_println("[OK] PWM_MAX atualizado para: " + String(systemConfig.motorPwmMax));
+            return;
+        }
+
+        if (grupo == "ULTRA" && chave == "FACTOR") {
+            systemConfig.ultraCalibrationFactor = valor.toFloat();
+            saveSystemConfigToFile();
+            console_println("[OK] ULTRA FACTOR atualizado para: " + String(systemConfig.ultraCalibrationFactor, 4));
+            return;
+        }
+
+        console_println("Grupo/chave de configuração não reconhecidos.");
+        printConfigUsage();
+        return;
+    }
+
+    console_println("Comando CONFIG inválido.");
+    printConfigUsage();
+}
+
+static void cmd_run(String args) {
+    String entrada = args;
+    entrada.trim();
+    entrada.toUpperCase();
+
+    if (entrada.length() == 0) {
+        console_println("Uso: RUN [DIAG|STATUS|SENSOR|MOTOR|WIFI|BOOT]");
+        return;
+    }
+
+    if (entrada == "DIAG" || entrada == "DIAGNOSTIC") {
+        executarDiagnostico();
+        console_println("[OK] Rotina DIAG concluída.");
+        return;
+    }
+
+    if (entrada == "STATUS" || entrada == "SYS") {
+        printStatusFull(true);
+        return;
+    }
+
+    if (entrada == "SENSOR") {
+        printSensorStatus();
+        return;
+    }
+
+    if (entrada == "MOTOR") {
+        printMotorStatus();
+        return;
+    }
+
+    if (entrada == "WIFI") {
+        printWifiStatus();
+        return;
+    }
+
+    if (entrada == "BOOT" || entrada == "CHECK") {
+        printStatusFull(true);
+        executarDiagnostico();
+        console_println("[OK] Rotina BOOT concluída.");
+        return;
+    }
+
+    if (entrada == "TEST_MOTOR" || entrada == "TESTMOTOR") {
+        console_println("[RUN] Iniciando teste de motores...");
+        motores_iniciarComando();
+        moverFrente(180);
+        delay(500);
+        pararMotores();
+        delay(200);
+        moverTras(160);
+        delay(500);
+        pararMotores();
+        delay(200);
+        virarEsquerda(150);
+        delay(450);
+        pararMotores();
+        delay(200);
+        virarDireita(150);
+        delay(450);
+        pararMotores();
+        motores_finalizarComando();
+        console_println("[OK] Teste de motores concluído.");
+        return;
+    }
+
+    console_println("Rotina RUN desconhecida. Use: DIAG, STATUS, SENSOR, MOTOR, WIFI, BOOT ou TEST_MOTOR.");
+}
+
 static bool ensureLittleFsMounted() {
     if (LittleFS.begin()) {
         return true;
@@ -533,6 +1012,7 @@ static void printLogUsage() {
     console_println("LOG INFO");
     console_println("LOG SHOW");
     console_println("LOG TAIL [linhas]");
+    console_println("LOG FILTER <texto>");
     console_println("LOG CLEAR CONFIRM");
 }
 

@@ -38,6 +38,10 @@ void console_startMpuStream();
 void console_startUltraStream();
 void console_startEncoderStream();
 void console_stopStreams();
+void console_startWatch(const String& target);
+void console_stopWatch();
+bool console_isWatchEnabled();
+String console_getWatchTarget();
 
 // Força reimpressão do prompt (útil após saída das rotinas)
 void console_printPrompt();
