@@ -50,6 +50,28 @@ static bool montarLittleFS() {
 const char* ssid = "ROBO_VESPA";
 const char* password = "12345678"; // mínimo 8 caracteres
 
+static const unsigned long WIFI_HEALTH_CHECK_MS = 2000;
+static const unsigned long WIFI_RECOVERY_COOLDOWN_MS = 5000;
+static const uint8_t WIFI_FAIL_STREAK_FOR_RECOVERY = 3;
+
+static bool wifiApHealthy = false;
+static bool wifiRecoveryInProgress = false;
+static uint8_t wifiFailStreak = 0;
+static unsigned long lastWifiHealthCheckMs = 0;
+static unsigned long lastWifiRecoveryMs = 0;
+static uint32_t wifiRecoveryCount = 0;
+static uint32_t wifiRecoveryAttempts = 0;
+static uint32_t wifiHealthChecks = 0;
+static uint32_t wifiHealthCheckFailures = 0;
+static unsigned long wifiLastHealthyMs = 0;
+static unsigned long wifiLastUnhealthyMs = 0;
+static unsigned long wifiLastRecoveryAttemptMs = 0;
+static unsigned long wifiLastRecoverySuccessMs = 0;
+static unsigned long wifiLastApStartAttemptMs = 0;
+static unsigned long wifiLastApStartSuccessMs = 0;
+static unsigned long wifiLastApStartFailureMs = 0;
+static String wifiLastFault = "startup_pending";
+
 // =====================================================
 // SERVIDOR WEB
 // =====================================================
@@ -59,6 +81,128 @@ static File fsUploadFile;
 static String fsUploadTargetPath;
 static bool fsUploadTargetsLogger = false;
 static bool openUploadTarget(File& outFile, const String& rawDestination, const String& uploadName, String& resolvedPath);
+static String escapeJson(const String& value);
+
+static const char* wifiModeToString(wifi_mode_t mode) {
+    switch (mode) {
+        case WIFI_MODE_NULL: return "null";
+        case WIFI_MODE_STA: return "sta";
+        case WIFI_MODE_AP: return "ap";
+        case WIFI_MODE_APSTA: return "apsta";
+        default: return "unknown";
+    }
+}
+
+static const char* wifiHealthToString() {
+    if (wifiRecoveryInProgress) {
+        return "recovering";
+    }
+
+    if (wifiApHealthy) {
+        return "healthy";
+    }
+
+    if (wifiFailStreak >= WIFI_FAIL_STREAK_FOR_RECOVERY) {
+        return "down";
+    }
+
+    return "unstable";
+}
+
+static String buildWifiDiagnosticsJson() {
+    unsigned long now = millis();
+    IPAddress ip = WiFi.softAPIP();
+    int clients = WiFi.softAPgetStationNum();
+
+    String json = "{";
+    json += "\"health\":\"" + String(wifiHealthToString()) + "\",";
+    json += "\"apHealthy\":" + String(wifiApHealthy ? "true" : "false") + ",";
+    json += "\"recoveryInProgress\":" + String(wifiRecoveryInProgress ? "true" : "false") + ",";
+    json += "\"failStreak\":" + String(wifiFailStreak) + ",";
+    json += "\"checks\":" + String(wifiHealthChecks) + ",";
+    json += "\"checkFailures\":" + String(wifiHealthCheckFailures) + ",";
+    json += "\"recoveryAttempts\":" + String(wifiRecoveryAttempts) + ",";
+    json += "\"recoveries\":" + String(wifiRecoveryCount) + ",";
+    json += "\"mode\":\"" + String(wifiModeToString(WiFi.getMode())) + "\",";
+    json += "\"ip\":\"" + ip.toString() + "\",";
+    json += "\"clients\":" + String(clients) + ",";
+    json += "\"lastFault\":\"" + escapeJson(wifiLastFault) + "\",";
+    json += "\"lastHealthyMs\":" + String(wifiLastHealthyMs) + ",";
+    json += "\"lastUnhealthyMs\":" + String(wifiLastUnhealthyMs) + ",";
+    json += "\"lastRecoveryAttemptMs\":" + String(wifiLastRecoveryAttemptMs) + ",";
+    json += "\"lastRecoverySuccessMs\":" + String(wifiLastRecoverySuccessMs) + ",";
+    json += "\"lastApStartAttemptMs\":" + String(wifiLastApStartAttemptMs) + ",";
+    json += "\"lastApStartSuccessMs\":" + String(wifiLastApStartSuccessMs) + ",";
+    json += "\"lastApStartFailureMs\":" + String(wifiLastApStartFailureMs) + ",";
+    json += "\"msSinceLastHealthy\":" + String((wifiLastHealthyMs > 0) ? (now - wifiLastHealthyMs) : 0) + ",";
+    json += "\"msSinceLastUnhealthy\":" + String((wifiLastUnhealthyMs > 0) ? (now - wifiLastUnhealthyMs) : 0);
+    json += "}";
+
+    return json;
+}
+
+static bool isAccessPointHealthy() {
+    wifi_mode_t mode = WiFi.getMode();
+    if (mode != WIFI_MODE_AP && mode != WIFI_MODE_APSTA) {
+        return false;
+    }
+
+    IPAddress ip = WiFi.softAPIP();
+    if (ip == IPAddress((uint32_t)0)) {
+        return false;
+    }
+
+    String apSsid = WiFi.softAPSSID();
+    apSsid.trim();
+    if (apSsid.length() == 0) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool iniciarAccessPointComValidacao(uint8_t tentativas, bool logTentativas) {
+    for (uint8_t i = 0; i < tentativas; ++i) {
+        wifiLastApStartAttemptMs = millis();
+        WiFi.softAPdisconnect(true);
+        delay(120);
+
+        WiFi.mode(WIFI_AP);
+        delay(60);
+
+        bool softApOk = WiFi.softAP(ssid, password);
+        delay(300);
+
+        bool apOk = softApOk && isAccessPointHealthy();
+        if (apOk) {
+            IPAddress ip = WiFi.softAPIP();
+            robotStateSetWifi(ip.toString(), WiFi.softAPgetStationNum());
+            wifiApHealthy = true;
+            wifiFailStreak = 0;
+            wifiLastHealthyMs = millis();
+            wifiLastApStartSuccessMs = wifiLastHealthyMs;
+            wifiLastFault = "none";
+            logInfo("WIFI: AP ativo. SSID: " + String(ssid) + " | IP: " + ip.toString());
+            return true;
+        }
+
+        wifiLastApStartFailureMs = millis();
+        wifiLastUnhealthyMs = wifiLastApStartFailureMs;
+        wifiLastFault = softApOk ? "ap_state_invalid_after_softap" : "softap_returned_false";
+
+        if (logTentativas) {
+            logWarn(
+                "WIFI: Falha ao criar AP (tentativa " + String(i + 1) + "/" + String(tentativas) +
+                "). softAP=" + String(softApOk ? "OK" : "FAIL") +
+                " IP=" + WiFi.softAPIP().toString()
+            );
+        }
+    }
+
+    wifiApHealthy = false;
+    robotStateSetWifi("0.0.0.0", 0);
+    return false;
+}
 
 static void resetUploadState() {
     if (fsUploadFile) {
@@ -757,6 +901,7 @@ static void configurarRotas() {
         json += "\"uptime_ms\": " + String(st.uptimeMs) + ",";
         json += "\"wifi_clients\": " + String(st.wifiClients) + ",";
         json += "\"wifi_ip\": \"" + String(st.wifiIp) + "\",";
+        json += "\"wifi_diag\": " + buildWifiDiagnosticsJson() + ",";
         json += "\"ultra\": {";
         json += "\"rawDistance\": " + String(getUltraRawDistanceCm(), 2) + ",";
         json += "\"filteredDistance\": " + String(getUltraFilteredDistanceCm(), 2) + ",";
@@ -823,7 +968,16 @@ static void configurarRotas() {
         json += "\"wifiConnected\": " + String(st.wifiConnected ? "true" : "false") + ",";
         json += "\"uptime\": " + String(st.uptime) + ",";
         json += "\"wifiClients\": " + String(st.wifiClients) + ",";
-        json += "\"wifiIp\": \"" + String(st.wifiIp) + "\"";
+        json += "\"wifiIp\": \"" + String(st.wifiIp) + "\",";
+        json += "\"wifiDiag\": " + buildWifiDiagnosticsJson();
+        json += "}";
+        server.send(200, "application/json", json);
+    });
+
+    server.on("/wifi-diagnostics", []() {
+        String json = "{";
+        json += "\"ok\":true,";
+        json += "\"wifiDiag\":" + buildWifiDiagnosticsJson();
         json += "}";
         server.send(200, "application/json", json);
     });
@@ -836,17 +990,12 @@ static void configurarRotas() {
 void initWiFi() {
     logInfo("WIFI: Iniciando modo Access Point...");
 
-    // Define modo AP
-    WiFi.mode(WIFI_AP);
+    bool apOk = iniciarAccessPointComValidacao(3, true);
+    if (!apOk) {
+        wifiLastFault = "init_ap_failed";
+        logError("WIFI: AP nao iniciou com sucesso. Sistema seguira tentando recuperar no loop.");
+    }
 
-    // Cria rede
-    WiFi.softAP(ssid, password);
-    IPAddress IP = WiFi.softAPIP();
-    robotStateSetWifi(IP.toString(), WiFi.softAPgetStationNum());
-
-    logInfo("WIFI: Rede criada!");
-    logInfo("WIFI: SSID: " + String(ssid));
-    logInfo("WIFI: IP: " + String(IP));
     // -------------------------------------------------
     // Inicializa sistema de arquivos
     // -------------------------------------------------
@@ -873,6 +1022,62 @@ void initWiFi() {
 // =====================================================
 
 void atualizarWiFi() {
-    robotStateSetWifi(WiFi.softAPIP().toString(), WiFi.softAPgetStationNum());
+    unsigned long now = millis();
+
+    if (now - lastWifiHealthCheckMs >= WIFI_HEALTH_CHECK_MS) {
+        lastWifiHealthCheckMs = now;
+        wifiHealthChecks++;
+
+        bool apOk = isAccessPointHealthy();
+
+        if (apOk) {
+            if (!wifiApHealthy) {
+                logInfo("WIFI: AP voltou a ficar estavel.");
+            }
+
+            wifiApHealthy = true;
+            wifiFailStreak = 0;
+            wifiLastHealthyMs = now;
+            wifiLastFault = "none";
+            robotStateSetWifi(WiFi.softAPIP().toString(), WiFi.softAPgetStationNum());
+        } else {
+            wifiApHealthy = false;
+            wifiFailStreak++;
+            wifiHealthCheckFailures++;
+            wifiLastUnhealthyMs = now;
+            wifiLastFault = "health_check_failed";
+            robotStateSetWifi("0.0.0.0", 0);
+
+            if (wifiFailStreak == 1 || (wifiFailStreak % 5) == 0) {
+                logWarn(
+                    "WIFI: AP instavel/indisponivel (falhas consecutivas=" + String(wifiFailStreak) +
+                    "). IP atual=" + WiFi.softAPIP().toString()
+                );
+            }
+
+            bool podeRecuperar = wifiFailStreak >= WIFI_FAIL_STREAK_FOR_RECOVERY;
+            bool cooldownOk = (now - lastWifiRecoveryMs) >= WIFI_RECOVERY_COOLDOWN_MS;
+
+            if (podeRecuperar && cooldownOk) {
+                lastWifiRecoveryMs = now;
+                wifiRecoveryAttempts++;
+                wifiRecoveryInProgress = true;
+                wifiLastRecoveryAttemptMs = now;
+                logWarn("WIFI: Tentando recuperar AP...");
+
+                bool recovered = iniciarAccessPointComValidacao(2, true);
+                wifiRecoveryInProgress = false;
+                if (recovered) {
+                    wifiRecoveryCount++;
+                    wifiLastRecoverySuccessMs = millis();
+                    logInfo("WIFI: AP recuperado automaticamente (total de recuperacoes=" + String(wifiRecoveryCount) + ").");
+                } else {
+                    wifiLastFault = "recovery_failed";
+                    logError("WIFI: Recuperacao do AP falhou. Nova tentativa apos cooldown.");
+                }
+            }
+        }
+    }
+
     server.handleClient();
 }

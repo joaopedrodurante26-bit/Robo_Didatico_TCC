@@ -31,6 +31,28 @@ static const unsigned long ULTRA_PERIOD_MS = 60UL;
 
 const char* ultraFilterModeToString(UltraFilterMode mode);
 
+static bool littleFsFileExistsSilent(const char* path) {
+    File root = LittleFS.open("/");
+    if (!root || !root.isDirectory()) {
+        return false;
+    }
+
+    File entry = root.openNextFile();
+    while (entry) {
+        if (String(entry.name()) == path) {
+            entry.close();
+            root.close();
+            return true;
+        }
+
+        entry.close();
+        entry = root.openNextFile();
+    }
+
+    root.close();
+    return false;
+}
+
 static float echoUsToCm(unsigned long echoUs) {
     // Distância (cm) = tempo(us) * velocidadeSom(cm/us) / 2.
     return static_cast<float>(echoUs) * 0.0343f / 2.0f;
@@ -190,7 +212,7 @@ static bool saveUltraConfig() {
 
 static void loadUltraConfig() {
     g_ultraConfigLoaded = true;
-    if (!LittleFS.exists(ULTRA_CONFIG_PATH)) {
+    if (!littleFsFileExistsSilent(ULTRA_CONFIG_PATH)) {
         return;
     }
 
