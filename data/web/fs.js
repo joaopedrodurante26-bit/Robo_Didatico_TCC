@@ -25,6 +25,10 @@ let currentPath = '/';
 let selectedItem = null;
 let fsStats = null;
 
+function isProtectedItem(item) {
+  return Boolean(item && item.protected);
+}
+
 function formatBytes(bytes) {
   const value = Number(bytes || 0);
   if (value < 1024) return `${value} B`;
@@ -181,8 +185,8 @@ function updateActionButtons() {
   const enabled = Boolean(selectedItem && selectedItem.type === 'file');
   fsDownload.disabled = !enabled;
   fsCopy.disabled = !enabled;
-  fsMove.disabled = !enabled;
-  fsDelete.disabled = !enabled;
+  fsMove.disabled = !enabled || isProtectedItem(selectedItem);
+  fsDelete.disabled = !enabled || isProtectedItem(selectedItem);
 }
 
 async function loadDirectory(path) {
@@ -211,6 +215,7 @@ async function loadDirectory(path) {
       path: target,
       type: 'file',
       size: data.size || 0,
+      protected: Boolean(data.protected),
     };
 
     fsCount.textContent = '1 item';
@@ -245,6 +250,9 @@ async function openFile(item) {
   selectedItem = item;
   updateActionButtons();
   fsMeta.textContent = `${item.path} | ${item.size || 0} bytes`;
+  if (isProtectedItem(item)) {
+    fsMeta.textContent += ' | protegido';
+  }
   fsPreview.textContent = 'Carregando arquivo...';
   setStatus('Lendo arquivo...');
 
@@ -296,6 +304,9 @@ async function copyOrMoveSelected(action) {
 
 async function deleteSelected() {
   if (!selectedItem) return;
+  if (isProtectedItem(selectedItem)) {
+    throw new Error('Arquivo protegido contra exclusao.');
+  }
 
   const deletedPath = selectedItem.path;
   const confirmText = `Digite CONFIRMAR para apagar ${selectedItem.path}`;
@@ -328,6 +339,9 @@ async function uploadSelectedFile() {
   }
 
   const destination = fsPathInput.value || currentPath;
+  if (/^\/(web|help)(\/|$)/.test(normalizePath(destination)) || normalizePath(destination) === '/boot_log.json' || normalizePath(destination) === '/ultra_config.json') {
+    throw new Error('Destino protegido contra escrita.');
+  }
   const formData = new FormData();
   formData.append('file', file, file.name);
 

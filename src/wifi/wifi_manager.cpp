@@ -85,8 +85,59 @@ static String fsUploadErrorMessage;
 static size_t fsUploadExpectedSize = 0;
 static size_t fsUploadBytesWritten = 0;
 static const size_t FS_RESERVED_FREE_BYTES = 1024;
+static String normalizeFsPath(String path);
 static bool openUploadTarget(File& outFile, const String& rawDestination, const String& uploadName, size_t uploadSize, String& resolvedPath, String& errorMessage);
 static String escapeJson(const String& value);
+
+static bool isForbiddenFsSegment(const String& segment) {
+    return segment == "." || segment == "..";
+}
+
+static bool isProtectedFsPath(const String& path) {
+    return path == "/boot_log.json"
+        || path == "/ultra_config.json"
+        || path.startsWith("/web")
+        || path.startsWith("/help");
+}
+
+static bool validateFsPath(const String& rawPath, String& normalizedPath, String& errorMessage) {
+    normalizedPath = normalizeFsPath(rawPath);
+
+    if (normalizedPath.indexOf('\\') >= 0) {
+        errorMessage = "Caminho invalido";
+        return false;
+    }
+
+    int start = 1;
+    while (start < normalizedPath.length()) {
+        int slash = normalizedPath.indexOf('/', start);
+        String segment = slash >= 0
+            ? normalizedPath.substring(start, slash)
+            : normalizedPath.substring(start);
+
+        if (isForbiddenFsSegment(segment)) {
+            errorMessage = "Caminho invalido";
+            return false;
+        }
+
+        if (slash < 0) {
+            break;
+        }
+
+        start = slash + 1;
+    }
+
+    return true;
+}
+
+static bool ensureWritableFsPath(const String& path, String& errorMessage) {
+    if (isProtectedFsPath(path)) {
+        errorMessage = "Caminho protegido contra escrita";
+        return false;
+    }
+
+    return true;
+}
 
 static void resetUploadError() {
     fsUploadHasError = false;
@@ -156,6 +207,10 @@ static String buildFsStatsJson() {
     json += "\"safeFreeBytes\":" + String((unsigned long)safeFreeBytes);
     json += "}";
     return json;
+}
+
+static String buildFsProtectionJson(const String& path) {
+    return String("\"protected\":") + (isProtectedFsPath(path) ? "true" : "false");
 }
 
 static const char* wifiModeToString(wifi_mode_t mode) {
@@ -457,7 +512,11 @@ static String resolveFsTargetPath(const String& rawDestination, const String& fa
     }
 
     bool wantsDirectory = raw.endsWith("/");
-    String normalized = normalizeFsPath(trimmed);
+    String errorMessage;
+    String normalized;
+    if (!validateFsPath(trimmed, normalized, errorMessage)) {
+        return "";
+    }
 
     File node = LittleFS.open(normalized.c_str(), "r");
     bool isDirectory = node && node.isDirectory();
@@ -567,8 +626,17 @@ static void streamFsDownload(const String& path) {
 static bool openUploadTarget(File& outFile, const String& rawDestination, const String& uploadName, size_t uploadSize, String& resolvedPath, String& errorMessage) {
     resolvedPath = resolveFsTargetPath(rawDestination, uploadName);
 
+    if (resolvedPath.length() == 0) {
+        errorMessage = "Destino invalido";
+        return false;
+    }
+
     if (resolvedPath == "/") {
         resolvedPath = buildChildPath("/", uploadName);
+    }
+
+    if (!ensureWritableFsPath(resolvedPath, errorMessage)) {
+        return false;
     }
 
     size_t destinationBytesFreed = 0;
@@ -623,7 +691,12 @@ static void responderFsApi() {
     action.toLowerCase();
 
     String rawPath = server.hasArg("path") ? server.arg("path") : "/";
-    String path = normalizeFsPath(rawPath);
+    String path;
+    String pathError;
+    if (!validateFsPath(rawPath, path, pathError)) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"" + escapeJson(pathError) + "\"}");
+        return;
+    }
 
     if (!LittleFS.begin()) {
         server.send(500, "application/json", "{\"ok\":false,\"error\":\"LittleFS indisponivel\"}");
@@ -638,7 +711,7 @@ static void responderFsApi() {
         }
 
         if (!node.isDirectory()) {
-            String json = "{\"ok\":true,\"path\":\"" + escapeJson(path) + "\",\"type\":\"file\",\"size\":" + String((unsigned long)node.size()) + ",\"items\":[]," + buildFsStatsJson() + "}";
+            String json = "{\"ok\":true,\"path\":\"" + escapeJson(path) + "\",\"type\":\"file\",\"size\":" + String((unsigned long)node.size()) + ",\"items\":[]," + buildFsStatsJson() + "," + buildFsProtectionJson(path) + "}";
             node.close();
             sendJsonString(json);
             return;
@@ -657,7 +730,8 @@ static void responderFsApi() {
             json += "{\"name\":\"" + escapeJson(String(entry.name())) + "\",";
             json += "\"path\":\"" + escapeJson(childPath) + "\",";
             json += "\"type\":\"" + String(entry.isDirectory() ? "directory" : "file") + "\",";
-            json += "\"size\":" + String((unsigned long)entry.size()) + "}";
+            json += "\"size\":" + String((unsigned long)entry.size()) + ",";
+            json += buildFsProtectionJson(childPath) + "}";
 
             first = false;
             entry.close();
@@ -700,6 +774,12 @@ static void responderFsApi() {
             return;
         }
 
+        String protectError;
+        if (!ensureWritableFsPath(path, protectError)) {
+            server.send(403, "application/json", "{\"ok\":false,\"error\":\"" + escapeJson(protectError) + "\"}");
+            return;
+        }
+
         File file = LittleFS.open(path.c_str(), "r");
         if (!file) {
             server.send(404, "application/json", "{\"ok\":false,\"error\":\"Arquivo nao encontrado\"}");
@@ -738,7 +818,13 @@ static void responderFsApi() {
         String rawSource = server.hasArg("source") ? server.arg("source") : "";
         String rawDest = server.hasArg("dest") ? server.arg("dest") : "";
 
-        String sourcePath = normalizeFsPath(rawSource);
+        String sourcePath;
+        String sourceError;
+        if (!validateFsPath(rawSource, sourcePath, sourceError)) {
+            server.send(400, "application/json", "{\"ok\":false,\"error\":\"" + escapeJson(sourceError) + "\"}");
+            return;
+        }
+
         if (sourcePath.length() == 0 || sourcePath == "/") {
             server.send(400, "application/json", "{\"ok\":false,\"error\":\"Fonte invalida\"}");
             return;
@@ -763,6 +849,17 @@ static void responderFsApi() {
         String destPath = resolveFsTargetPath(rawDest, baseNameFromPath(sourcePath));
         if (destPath.length() == 0 || destPath == "/") {
             server.send(400, "application/json", "{\"ok\":false,\"error\":\"Destino invalido\"}");
+            return;
+        }
+
+        String protectError;
+        if (!ensureWritableFsPath(destPath, protectError)) {
+            server.send(403, "application/json", "{\"ok\":false,\"error\":\"" + escapeJson(protectError) + "\"}");
+            return;
+        }
+
+        if (action == "move" && isProtectedFsPath(sourcePath)) {
+            server.send(403, "application/json", "{\"ok\":false,\"error\":\"Caminho protegido contra escrita\"}");
             return;
         }
 
