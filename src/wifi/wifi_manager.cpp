@@ -80,8 +80,83 @@ static WebServer server(80);
 static File fsUploadFile;
 static String fsUploadTargetPath;
 static bool fsUploadTargetsLogger = false;
-static bool openUploadTarget(File& outFile, const String& rawDestination, const String& uploadName, String& resolvedPath);
+static bool fsUploadHasError = false;
+static String fsUploadErrorMessage;
+static size_t fsUploadExpectedSize = 0;
+static size_t fsUploadBytesWritten = 0;
+static const size_t FS_RESERVED_FREE_BYTES = 1024;
+static bool openUploadTarget(File& outFile, const String& rawDestination, const String& uploadName, size_t uploadSize, String& resolvedPath, String& errorMessage);
 static String escapeJson(const String& value);
+
+static void resetUploadError() {
+    fsUploadHasError = false;
+    fsUploadErrorMessage = "";
+    fsUploadExpectedSize = 0;
+    fsUploadBytesWritten = 0;
+}
+
+static void failUpload(const String& errorMessage) {
+    fsUploadHasError = true;
+    fsUploadErrorMessage = errorMessage;
+}
+
+static void getFsUsage(size_t& totalBytes, size_t& usedBytes, size_t& freeBytes) {
+    totalBytes = LittleFS.totalBytes();
+    usedBytes = LittleFS.usedBytes();
+    freeBytes = totalBytes > usedBytes ? (totalBytes - usedBytes) : 0;
+}
+
+static bool hasFsHeadroom(size_t bytesToWrite, size_t bytesFreedFirst, String& errorMessage) {
+    size_t totalBytes = 0;
+    size_t usedBytes = 0;
+    size_t freeBytes = 0;
+    getFsUsage(totalBytes, usedBytes, freeBytes);
+
+    size_t effectiveFree = freeBytes + bytesFreedFirst;
+    if (effectiveFree <= FS_RESERVED_FREE_BYTES || bytesToWrite > (effectiveFree - FS_RESERVED_FREE_BYTES)) {
+        size_t safeWritable = effectiveFree > FS_RESERVED_FREE_BYTES ? (effectiveFree - FS_RESERVED_FREE_BYTES) : 0;
+        errorMessage = "Espaco insuficiente no LittleFS. Livre=" + String((unsigned long)freeBytes)
+            + " bytes, reserva=" + String((unsigned long)FS_RESERVED_FREE_BYTES)
+            + " bytes, maximo seguro=" + String((unsigned long)safeWritable) + " bytes.";
+        return false;
+    }
+
+    return true;
+}
+
+static size_t fileSizeIfRegular(const String& path) {
+    File file = LittleFS.open(path.c_str(), "r");
+    if (!file) {
+        return 0;
+    }
+
+    if (file.isDirectory()) {
+        file.close();
+        return 0;
+    }
+
+    size_t size = file.size();
+    file.close();
+    return size;
+}
+
+static String buildFsStatsJson() {
+    size_t totalBytes = 0;
+    size_t usedBytes = 0;
+    size_t freeBytes = 0;
+    getFsUsage(totalBytes, usedBytes, freeBytes);
+
+    size_t safeFreeBytes = freeBytes > FS_RESERVED_FREE_BYTES ? (freeBytes - FS_RESERVED_FREE_BYTES) : 0;
+
+    String json = "\"stats\":{";
+    json += "\"totalBytes\":" + String((unsigned long)totalBytes) + ",";
+    json += "\"usedBytes\":" + String((unsigned long)usedBytes) + ",";
+    json += "\"freeBytes\":" + String((unsigned long)freeBytes) + ",";
+    json += "\"reservedBytes\":" + String((unsigned long)FS_RESERVED_FREE_BYTES) + ",";
+    json += "\"safeFreeBytes\":" + String((unsigned long)safeFreeBytes);
+    json += "}";
+    return json;
+}
 
 static const char* wifiModeToString(wifi_mode_t mode) {
     switch (mode) {
@@ -228,6 +303,7 @@ static void resetUploadState() {
     fsUploadFile = File();
     fsUploadTargetPath = "";
     fsUploadTargetsLogger = false;
+    resetUploadError();
 }
 
 static void handleFsUpload() {
@@ -236,6 +312,7 @@ static void handleFsUpload() {
     if (upload.status == UPLOAD_FILE_START) {
         if (!LittleFS.begin()) {
             resetUploadState();
+            failUpload("LittleFS indisponivel");
             return;
         }
 
@@ -253,11 +330,17 @@ static void handleFsUpload() {
         }
 
         String resolvedPath;
-        if (!openUploadTarget(fsUploadFile, rawDestination, uploadName, resolvedPath)) {
+        String errorMessage;
+        fsUploadExpectedSize = upload.totalSize;
+        if (!openUploadTarget(fsUploadFile, rawDestination, uploadName, upload.totalSize, resolvedPath, errorMessage)) {
             if (fsUploadTargetsLogger) {
                 reopenLogger();
             }
+            if (errorMessage.length() == 0) {
+                errorMessage = "Falha ao abrir destino do upload";
+            }
             resetUploadState();
+            failUpload(errorMessage);
             return;
         }
 
@@ -267,7 +350,16 @@ static void handleFsUpload() {
 
     if (upload.status == UPLOAD_FILE_WRITE) {
         if (fsUploadFile) {
-            fsUploadFile.write(upload.buf, upload.currentSize);
+            size_t written = fsUploadFile.write(upload.buf, upload.currentSize);
+            fsUploadBytesWritten += written;
+            if (written != upload.currentSize) {
+                fsUploadFile.close();
+                if (fsUploadTargetPath.length() > 0) {
+                    LittleFS.remove(fsUploadTargetPath.c_str());
+                }
+                failUpload("Falha ao gravar arquivo no LittleFS. Verifique o espaco disponivel.");
+                fsUploadFile = File();
+            }
         }
         return;
     }
@@ -276,6 +368,13 @@ static void handleFsUpload() {
         if (fsUploadFile) {
             fsUploadFile.flush();
             fsUploadFile.close();
+        }
+
+        if (!fsUploadHasError && fsUploadExpectedSize > 0 && fsUploadBytesWritten != fsUploadExpectedSize) {
+            if (fsUploadTargetPath.length() > 0) {
+                LittleFS.remove(fsUploadTargetPath.c_str());
+            }
+            failUpload("Upload incompleto. O arquivo foi removido para evitar corrupcao.");
         }
 
         if (fsUploadTargetsLogger) {
@@ -382,6 +481,7 @@ static bool copyFsFile(const String& sourcePath, const String& destinationPath) 
         return false;
     }
 
+    size_t destinationBytesFreed = 0;
     if (LittleFS.exists(destinationPath.c_str())) {
         File existing = LittleFS.open(destinationPath.c_str(), "r");
         if (existing && existing.isDirectory()) {
@@ -390,9 +490,18 @@ static bool copyFsFile(const String& sourcePath, const String& destinationPath) 
             return false;
         }
         if (existing) {
+            destinationBytesFreed = existing.size();
+        }
+        if (existing) {
             existing.close();
         }
         LittleFS.remove(destinationPath.c_str());
+    }
+
+    String capacityError;
+    if (!hasFsHeadroom(source.size(), destinationBytesFreed, capacityError)) {
+        source.close();
+        return false;
     }
 
     File destination = LittleFS.open(destinationPath.c_str(), "w");
@@ -455,23 +564,33 @@ static void streamFsDownload(const String& path) {
     file.close();
 }
 
-static bool openUploadTarget(File& outFile, const String& rawDestination, const String& uploadName, String& resolvedPath) {
+static bool openUploadTarget(File& outFile, const String& rawDestination, const String& uploadName, size_t uploadSize, String& resolvedPath, String& errorMessage) {
     resolvedPath = resolveFsTargetPath(rawDestination, uploadName);
 
     if (resolvedPath == "/") {
         resolvedPath = buildChildPath("/", uploadName);
     }
 
+    size_t destinationBytesFreed = 0;
     File existing = LittleFS.open(resolvedPath.c_str(), "r");
     if (existing && existing.isDirectory()) {
         existing.close();
+        errorMessage = "Destino aponta para um diretorio";
         return false;
     }
     if (existing) {
+        destinationBytesFreed = existing.size();
         existing.close();
     }
 
+    if (uploadSize > 0 && !hasFsHeadroom(uploadSize, destinationBytesFreed, errorMessage)) {
+        return false;
+    }
+
     outFile = LittleFS.open(resolvedPath.c_str(), "w");
+    if (!outFile && errorMessage.length() == 0) {
+        errorMessage = "Nao foi possivel abrir o arquivo de destino";
+    }
     return (bool)outFile;
 }
 
@@ -519,13 +638,13 @@ static void responderFsApi() {
         }
 
         if (!node.isDirectory()) {
-            String json = "{\"ok\":true,\"path\":\"" + escapeJson(path) + "\",\"type\":\"file\",\"size\":" + String((unsigned long)node.size()) + ",\"items\":[]}";
+            String json = "{\"ok\":true,\"path\":\"" + escapeJson(path) + "\",\"type\":\"file\",\"size\":" + String((unsigned long)node.size()) + ",\"items\":[]," + buildFsStatsJson() + "}";
             node.close();
             sendJsonString(json);
             return;
         }
 
-        String json = "{\"ok\":true,\"path\":\"" + escapeJson(path) + "\",\"type\":\"directory\",\"items\":[";
+        String json = "{\"ok\":true,\"path\":\"" + escapeJson(path) + "\",\"type\":\"directory\"," + buildFsStatsJson() + ",\"items\":[";
         bool first = true;
         File entry = node.openNextFile();
 
@@ -637,11 +756,20 @@ static void responderFsApi() {
             return;
         }
 
+        size_t sourceSize = source.size();
+
         source.close();
 
         String destPath = resolveFsTargetPath(rawDest, baseNameFromPath(sourcePath));
         if (destPath.length() == 0 || destPath == "/") {
             server.send(400, "application/json", "{\"ok\":false,\"error\":\"Destino invalido\"}");
+            return;
+        }
+
+        size_t destinationBytesFreed = fileSizeIfRegular(destPath);
+        String capacityError;
+        if (sourcePath != destPath && !hasFsHeadroom(sourceSize, destinationBytesFreed, capacityError)) {
+            server.send(400, "application/json", "{\"ok\":false,\"error\":\"" + escapeJson(capacityError) + "\"}");
             return;
         }
 
@@ -816,6 +944,13 @@ static void configurarRotas() {
 
             if (fsUploadTargetsLogger) {
                 reopenLogger();
+            }
+
+            if (fsUploadHasError) {
+                String errorResponse = "{\"ok\":false,\"error\":\"" + escapeJson(fsUploadErrorMessage) + "\"}";
+                resetUploadState();
+                server.send(400, "application/json", errorResponse);
+                return;
             }
 
             String response = "{\"ok\":true,\"path\":\"" + escapeJson(fsUploadTargetPath) + "\"}";

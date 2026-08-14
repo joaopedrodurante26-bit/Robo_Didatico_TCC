@@ -23,9 +23,34 @@
     <section class="fs-hero card">
       <div>
         <h2>Particao LittleFS</h2>
-        <p>Explore pastas, leia arquivos e remova logs diretamente do navegador.</p>
+        <p>Explore pastas, leia arquivos e envie arquivos sem encostar no limite da particao.</p>
       </div>
       <div class="fs-hero-badge" id="fs-status">Pronto</div>
+    </section>
+
+    <section class="fs-storage card">
+      <div>
+        <h2>Uso de armazenamento</h2>
+        <p id="fs-storage-summary">Carregando metricas do LittleFS...</p>
+      </div>
+      <div class="fs-storage-stats">
+        <div class="fs-storage-metric">
+          <span>Total</span>
+          <strong id="fs-total-bytes">-</strong>
+        </div>
+        <div class="fs-storage-metric">
+          <span>Usado</span>
+          <strong id="fs-used-bytes">-</strong>
+        </div>
+        <div class="fs-storage-metric">
+          <span>Livre seguro</span>
+          <strong id="fs-safe-free-bytes">-</strong>
+        </div>
+      </div>
+      <div class="fs-storage-bar" aria-hidden="true">
+        <div id="fs-storage-bar-used" class="fs-storage-bar-used"></div>
+      </div>
+      <div id="fs-upload-hint" class="fs-upload-hint">Selecione um arquivo para validar o upload.</div>
     </section>
 
     <section class="fs-toolbar card">

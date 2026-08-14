@@ -14,9 +14,23 @@ const fsOpen = document.getElementById('fs-open');
 const fsUp = document.getElementById('fs-up');
 const fsUploadInput = document.getElementById('fs-upload-input');
 const fsUploadBtn = document.getElementById('fs-upload-btn');
+const fsStorageSummary = document.getElementById('fs-storage-summary');
+const fsTotalBytes = document.getElementById('fs-total-bytes');
+const fsUsedBytes = document.getElementById('fs-used-bytes');
+const fsSafeFreeBytes = document.getElementById('fs-safe-free-bytes');
+const fsStorageBarUsed = document.getElementById('fs-storage-bar-used');
+const fsUploadHint = document.getElementById('fs-upload-hint');
 
 let currentPath = '/';
 let selectedItem = null;
+let fsStats = null;
+
+function formatBytes(bytes) {
+  const value = Number(bytes || 0);
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 function normalizePath(path) {
   const raw = String(path || '').trim();
@@ -37,6 +51,54 @@ function joinPath(base, child) {
 
 function setStatus(text) {
   fsStatus.textContent = text;
+}
+
+function updateStoragePanel(stats) {
+  fsStats = stats || null;
+
+  if (!fsStats) {
+    fsStorageSummary.textContent = 'Metricas indisponiveis.';
+    fsTotalBytes.textContent = '-';
+    fsUsedBytes.textContent = '-';
+    fsSafeFreeBytes.textContent = '-';
+    fsStorageBarUsed.style.width = '0%';
+    updateUploadEligibility();
+    return;
+  }
+
+  const total = Number(fsStats.totalBytes || 0);
+  const used = Number(fsStats.usedBytes || 0);
+  const free = Number(fsStats.freeBytes || 0);
+  const safeFree = Number(fsStats.safeFreeBytes || 0);
+  const reserved = Number(fsStats.reservedBytes || 0);
+  const usedPercent = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+
+  fsTotalBytes.textContent = formatBytes(total);
+  fsUsedBytes.textContent = `${formatBytes(used)} (${usedPercent}%)`;
+  fsSafeFreeBytes.textContent = formatBytes(safeFree);
+  fsStorageSummary.textContent = `Livre atual: ${formatBytes(free)}. Reserva de seguranca: ${formatBytes(reserved)}.`;
+  fsStorageBarUsed.style.width = `${usedPercent}%`;
+
+  updateUploadEligibility();
+}
+
+function updateUploadEligibility() {
+  const file = fsUploadInput.files && fsUploadInput.files[0];
+  const safeFree = Number(fsStats && fsStats.safeFreeBytes ? fsStats.safeFreeBytes : 0);
+
+  if (!file) {
+    fsUploadBtn.disabled = false;
+    fsUploadHint.textContent = fsStats
+      ? `Espaco seguro disponivel para upload: ${formatBytes(safeFree)}.`
+      : 'Selecione um arquivo para validar o upload.';
+    return;
+  }
+
+  const fits = !fsStats || file.size <= safeFree;
+  fsUploadBtn.disabled = !fits;
+  fsUploadHint.textContent = fits
+    ? `Arquivo selecionado: ${file.name} (${formatBytes(file.size)}).`
+    : `Arquivo muito grande para o espaco seguro restante: ${formatBytes(file.size)} de ${formatBytes(safeFree)}.`;
 }
 
 function renderBreadcrumb(path) {
@@ -142,6 +204,8 @@ async function loadDirectory(path) {
   }
 
   if (data.type === 'file') {
+    updateStoragePanel(data.stats || null);
+
     const fileItem = {
       name: target.split('/').filter(Boolean).pop() || target,
       path: target,
@@ -156,6 +220,7 @@ async function loadDirectory(path) {
   }
 
   const items = Array.isArray(data.items) ? data.items.slice() : [];
+  updateStoragePanel(data.stats || null);
   items.sort((a, b) => {
     if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
     return String(a.name || '').localeCompare(String(b.name || ''));
@@ -258,6 +323,10 @@ async function uploadSelectedFile() {
     return;
   }
 
+  if (fsStats && file.size > Number(fsStats.safeFreeBytes || 0)) {
+    throw new Error('Arquivo excede o espaco seguro disponivel na particao.');
+  }
+
   const destination = fsPathInput.value || currentPath;
   const formData = new FormData();
   formData.append('file', file, file.name);
@@ -312,6 +381,7 @@ fsUploadBtn.addEventListener('click', () => {
     fsPreview.textContent = error.message || 'Falha ao enviar arquivo.';
   });
 });
+fsUploadInput.addEventListener('change', updateUploadEligibility);
 fsPathInput.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
     openPath(fsPathInput.value);
